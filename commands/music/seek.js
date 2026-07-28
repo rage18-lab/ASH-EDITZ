@@ -1,4 +1,4 @@
-const ms = require('ms');
+const { ms } = require('ms');
 const { ApplicationCommandOptionType, EmbedBuilder } = require('discord.js');
 const { useQueue } = require('discord-player');
 const { Translate } = require('../../process_tools');
