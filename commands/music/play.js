@@ -19,10 +19,17 @@ module.exports = {
         const player = useMainPlayer();
 
         const song = inter.options.getString('song');
-        const res = await player.search(song, {
+        let res = await player.search(song, {
             requestedBy: inter.member,
             searchEngine: QueryType.AUTO
         });
+
+        if (!res?.tracks.length) {
+            res = await player.search(song, {
+                requestedBy: inter.member,
+                searchEngine: QueryType.SOUNDCLOUD_SEARCH
+            });
+        }
 
         let defaultEmbed = new EmbedBuilder().setColor('#2f3136');
 
@@ -32,7 +39,7 @@ module.exports = {
         }
 
         try {
-            const { track } = await player.play(inter.member.voice.channel, song, {
+            const { track } = await player.play(inter.member.voice.channel, res, {
                 nodeOptions: {
                     metadata: {
                         channel: inter.channel
@@ -48,8 +55,8 @@ module.exports = {
             defaultEmbed.setAuthor({ name: await Translate(`Loading <${track.title}> to the queue... <✅>`) });
             await inter.editReply({ embeds: [defaultEmbed] });
         } catch (error) {
-            console.log(`Play error: ${error}`);
-            defaultEmbed.setAuthor({ name: await Translate(`I can't join the voice channel... try again ? <❌>`) });
+            console.error(`Play error:`, error);
+            defaultEmbed.setAuthor({ name: await Translate(`Could not play this track... try again ? <❌>`) });
             return inter.editReply({ embeds: [defaultEmbed] });
         }
     }

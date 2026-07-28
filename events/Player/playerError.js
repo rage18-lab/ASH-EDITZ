@@ -10,6 +10,6 @@ module.exports = (queue, error) => {
 
         queue.metadata.channel.send({ embeds: [embed] });
 
-        console.log((`Error emitted from the player <${error.message}>`))
+        console.error('Error emitted from the player:', error);
     })()
 }

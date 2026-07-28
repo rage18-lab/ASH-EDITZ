@@ -3,9 +3,8 @@ require('dotenv').config();
 const { Player } = require('discord-player');
 const { Client, GatewayIntentBits } = require('discord.js');
 const {
-    YouTubeExtractor,
-    SpotifyExtractor,
     SoundCloudExtractor,
+    SpotifyExtractor,
     AppleMusicExtractor,
     AttachmentExtractor,
 } = require('@discord-player/extractor');
@@ -25,22 +24,16 @@ client.config = require('./config');
 
 const player = new Player(client, client.config.opt.discordPlayer);
 
-// Register all extractors (YouTube, Spotify, SoundCloud, Apple Music, Attachments)
 (async () => {
     try {
-        await player.extractors.register(YouTubeExtractor, {});
-        console.log('✅ YouTubeExtractor loaded');
-    } catch (e) { console.warn('⚠️ YouTubeExtractor failed:', e.message); }
+        await player.extractors.register(SoundCloudExtractor, {});
+        console.log('✅ SoundCloudExtractor loaded');
+    } catch (e) { console.warn('⚠️ SoundCloudExtractor failed:', e.message); }
 
     try {
         await player.extractors.register(SpotifyExtractor, {});
         console.log('✅ SpotifyExtractor loaded');
     } catch (e) { console.warn('⚠️ SpotifyExtractor failed:', e.message); }
-
-    try {
-        await player.extractors.register(SoundCloudExtractor, {});
-        console.log('✅ SoundCloudExtractor loaded');
-    } catch (e) { console.warn('⚠️ SoundCloudExtractor failed:', e.message); }
 
     try {
         await player.extractors.register(AppleMusicExtractor, {});
