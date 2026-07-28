@@ -39,7 +39,7 @@ module.exports = {
         }
 
         try {
-            const { track } = await player.play(inter.member.voice.channel, res, {
+            const { track } = await player.play(inter.member.voice.channel, res.tracks[0], {
                 nodeOptions: {
                     metadata: {
                         channel: inter.channel
@@ -49,6 +49,8 @@ module.exports = {
                     leaveOnEmptyCooldown: client.config.opt.leaveOnEmptyCooldown,
                     leaveOnEnd: client.config.opt.leaveOnEnd,
                     leaveOnEndCooldown: client.config.opt.leaveOnEndCooldown,
+                    selfDeaf: true,
+                    bufferingTimeout: 3000,
                 }
             });
 
