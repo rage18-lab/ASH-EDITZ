@@ -165,7 +165,25 @@ module.exports = {
 
                 if (!queue.connection) await queue.connect(inter.member.voice.channel);
 
-                queue.addTrack(selectedTrack);
+                let trackToPlay = selectedTrack;
+
+                // Bridge Spotify/AppleMusic metadata tracks to real YouTube streams
+                if (selectedTrack.source === 'spotify' || selectedTrack.source === 'apple_music') {
+                    try {
+                        const bridgeRes = await player.search(`ytsearch:${selectedTrack.title} ${selectedTrack.author}`, {
+                            requestedBy: inter.member,
+                            searchEngine: QueryType.AUTO,
+                        });
+                        if (bridgeRes?.tracks?.length) {
+                            trackToPlay = bridgeRes.tracks[0];
+                            console.log(`[Search] Bridged "${selectedTrack.title}" from ${selectedTrack.source} → YouTube`);
+                        }
+                    } catch (e) {
+                        console.warn('[Search] Spotify bridge failed:', e.message);
+                    }
+                }
+
+                queue.addTrack(trackToPlay);
                 if (!queue.isPlaying()) await queue.node.play();
 
                 const popBadge = formatPopularityBadge(selectedTrack);

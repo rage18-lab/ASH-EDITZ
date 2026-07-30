@@ -1,12 +1,50 @@
-const { ms } = require('ms');
-const { Translate } = require('../../process_tools');
+const { EmbedBuilder } = require('discord.js');
 
 module.exports = {
     name: 'ping',
-    description:("Get the ping of the bot!"),
+    description: 'Check the bot\'s latency and connection status',
 
     async execute({ client, inter }) {
-        await inter.editReply("Ping?");
-        inter.editReply(await Translate(`Pong! API Latency is <${Math.round(client.ws.ping)}ms 🛰️>, last heartbeat calculated <${ms(Date.now() - client.ws.shards.first().lastPingTimestamp, { long: true })}> ago`));
+        const wsLatency = Math.round(client.ws.ping);
+        const start = Date.now();
+
+        // Edit the deferred reply to measure round-trip
+        await inter.editReply({ content: '📡 Measuring...' });
+        const apiLatency = Date.now() - start;
+
+        const getBar = (ms) => {
+            if (ms < 100) return '🟢 Excellent';
+            if (ms < 200) return '🟡 Good';
+            if (ms < 400) return '🟠 Fair';
+            return '🔴 Poor';
+        };
+
+        const embed = new EmbedBuilder()
+            .setAuthor({
+                name: '🛰️  Pong!',
+                iconURL: client.user.displayAvatarURL({ size: 64 })
+            })
+            .setDescription(
+                `> **WebSocket Latency:** \`${wsLatency}ms\` ${getBar(wsLatency)}\n` +
+                `> **API Round-Trip:** \`${apiLatency}ms\` ${getBar(apiLatency)}\n` +
+                `> **Uptime:** \`${formatUptime(client.uptime)}\``
+            )
+            .setColor(wsLatency < 200 ? '#57F287' : wsLatency < 400 ? '#FEE75C' : '#ED4245')
+            .setFooter({ text: 'Hot Pursuit • Music Bot' })
+            .setTimestamp();
+
+        return inter.editReply({ content: null, embeds: [embed] });
     }
 };
+
+function formatUptime(ms) {
+    if (!ms) return 'Unknown';
+    const s = Math.floor(ms / 1000);
+    const m = Math.floor(s / 60);
+    const h = Math.floor(m / 60);
+    const d = Math.floor(h / 24);
+    if (d > 0) return `${d}d ${h % 24}h ${m % 60}m`;
+    if (h > 0) return `${h}h ${m % 60}m ${s % 60}s`;
+    if (m > 0) return `${m}m ${s % 60}s`;
+    return `${s}s`;
+}
