@@ -4,12 +4,12 @@
 .env
 .env.*
 !.env.example
+ytOAuthTokens.json
 
 # ========================
 # Node
 # ========================
 node_modules/
-package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
