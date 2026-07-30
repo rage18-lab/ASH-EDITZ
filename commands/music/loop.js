@@ -1,67 +1,69 @@
 const { QueueRepeatMode, useQueue } = require('discord-player');
 const { ApplicationCommandOptionType, EmbedBuilder } = require('discord.js');
-const { Translate } = require('../../process_tools');
 
 module.exports = {
     name: 'loop',
-    description:('Toggle the looping of song\'s or the whole queue'),
+    description: 'Toggle song, queue, or autoplay loop mode',
     voiceChannel: true,
     options: [
         {
             name: 'action',
-            description:('What action you want to preform on the loop'),
+            description: 'Loop action to perform',
             type: ApplicationCommandOptionType.String,
             required: true,
             choices: [
-                { name: 'Queue', value: 'enable_loop_queue' },
-                { name: 'Disable', value: 'disable_loop' },
-                { name: 'Song', value: 'enable_loop_song' },
+                { name: 'Disable Loop', value: 'disable_loop' },
+                { name: 'Song Loop', value: 'enable_loop_song' },
+                { name: 'Queue Loop', value: 'enable_loop_queue' },
                 { name: 'Autoplay', value: 'enable_autoplay' },
             ],
         }
     ],
 
-   async execute({ inter }) {
+    async execute({ inter }) {
         const queue = useQueue(inter.guild);
-        const errorMessage = await Translate(`Something went wrong <${inter.member}>... try again ? <❌>`);
-        let baseEmbed = new EmbedBuilder()
-            .setColor('#2f3136');
 
-        if (!queue?.isPlaying()) return inter.editReply({ content: await Translate(`No music currently playing <${inter.member}>... try again ? <❌>`) });
+        if (!queue?.isPlaying()) {
+            const errEmbed = new EmbedBuilder()
+                .setAuthor({ name: '❌ No music currently playing' })
+                .setColor('#ED4245');
+            return inter.editReply({ embeds: [errEmbed] });
+        }
 
-        switch (inter.options._hoistedOptions.map(x => x.value).toString()) {
-            case 'enable_loop_queue': {
-                if (queue.repeatMode === QueueRepeatMode.TRACK) return inter.editReply({ content: `You must first disable the current music in the loop mode (\`/loop Disable\`) ${inter.member}... try again ? ❌` });
+        const choice = inter.options.getString('action');
+        const embed = new EmbedBuilder().setColor('#5865F2');
 
-                const success = queue.setRepeatMode(QueueRepeatMode.QUEUE);
-                baseEmbed.setAuthor({ name: success ? errorMessage : await Translate(`Repeat mode enabled the whole queue will be repeated endlessly <🔁>`) })
-
-                return inter.editReply({ embeds: [baseEmbed] });
-            }
+        switch (choice) {
             case 'disable_loop': {
-                if (queue.repeatMode === QueueRepeatMode.OFF) return inter.editReply({ content: await Translate(`You must first enable the loop mode <(/loop Queue or /loop Song)> <${inter.member}>... try again ? <❌>`) });
-
-                const success = queue.setRepeatMode(QueueRepeatMode.OFF);
-                baseEmbed.setAuthor({ name: success ? errorMessage : await Translate(`Repeat mode disabled the queue will no longer be repeated <🔁>`) })
-
-                return inter.editReply({ embeds: [baseEmbed] });
+                queue.setRepeatMode(QueueRepeatMode.OFF);
+                embed.setAuthor({ name: '⏹  Loop Disabled' })
+                     .setDescription('Queue will play normally without repeating.')
+                     .setColor('#ED4245');
+                break;
             }
             case 'enable_loop_song': {
-                if (queue.repeatMode === QueueRepeatMode.QUEUE) return inter.editReply({ content: await Translate(`You must first disable the current music in the loop mode <(\`/loop Disable\`)> <${inter.member}>... try again ? <❌>`) });
-
-                const success = queue.setRepeatMode(QueueRepeatMode.TRACK);
-                baseEmbed.setAuthor({ name: success ? errorMessage : await Translate(`Repeat mode enabled the current song will be repeated endlessly (you can end the loop with <\`/loop disable\` >)`) })
-
-                return inter.editReply({ embeds: [baseEmbed] });
+                queue.setRepeatMode(QueueRepeatMode.TRACK);
+                embed.setAuthor({ name: '🔂  Single Song Loop Enabled' })
+                     .setDescription(`Now repeating **${queue.currentTrack.title}** endlessly.`)
+                     .setColor('#57F287');
+                break;
+            }
+            case 'enable_loop_queue': {
+                queue.setRepeatMode(QueueRepeatMode.QUEUE);
+                embed.setAuthor({ name: '🔁  Queue Loop Enabled' })
+                     .setDescription('The entire queue will be repeated continuously.')
+                     .setColor('#57F287');
+                break;
             }
             case 'enable_autoplay': {
-                if (queue.repeatMode === QueueRepeatMode.AUTOPLAY) return inter.editReply({ content: await Translate(`You must first disable the current music in the loop mode <(\`/loop Disable\`)> <${inter.member}>... try again ? <❌>`) });
-
-                const success = queue.setRepeatMode(QueueRepeatMode.AUTOPLAY);
-                baseEmbed.setAuthor({ name: success ? errorMessage : await Translate(`Autoplay enabled the queue will be automatically filled with similar songs to the current one <🔁>`) })
-
-                return inter.editReply({ embeds: [baseEmbed] });
+                queue.setRepeatMode(QueueRepeatMode.AUTOPLAY);
+                embed.setAuthor({ name: '🔄  Autoplay Enabled' })
+                     .setDescription('The queue will automatically be populated with related songs!')
+                     .setColor('#57F287');
+                break;
             }
         }
+
+        return inter.editReply({ embeds: [embed] });
     }
-}
+};

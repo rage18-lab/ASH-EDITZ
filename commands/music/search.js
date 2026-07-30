@@ -1,15 +1,21 @@
-const { ApplicationCommandOptionType, EmbedBuilder } = require('discord.js');
+const {
+    ApplicationCommandOptionType,
+    ActionRowBuilder,
+    StringSelectMenuBuilder,
+    EmbedBuilder,
+    ComponentType
+} = require('discord.js');
 const { QueryType, useMainPlayer } = require('discord-player');
-const { Translate } = require('../../process_tools');
+const { formatPopularityBadge, rankSearchResults } = require('../../utils/popularity');
 
 module.exports = {
     name: 'search',
-    description: 'Search a song',
+    description: 'Search top popular tracks on Spotify & YouTube',
     voiceChannel: true,
     options: [
         {
             name: 'song',
-            description:('The song you want to search'),
+            description: 'Song name or query to search for',
             type: ApplicationCommandOptionType.String,
             required: true,
         }
@@ -17,76 +23,194 @@ module.exports = {
 
     async execute({ client, inter }) {
         const player = useMainPlayer();
-        const song = inter.options.getString('song');
+        const song   = inter.options.getString('song');
 
-        let res = await player.search(song, {
-            requestedBy: inter.member,
-            searchEngine: QueryType.AUTO
-        });
+        let rawTracks = [];
 
-        if (!res?.tracks.length) {
-            res = await player.search(song, {
+        // ── 1. YouTube search ────────────────────────────────────────────────
+        if (!/^https?:\/\//i.test(song)) {
+            try {
+                const ytRes = await player.search(`ytsearch:${song}`, {
+                    requestedBy: inter.member,
+                    searchEngine: QueryType.AUTO
+                });
+                if (ytRes?.tracks?.length) rawTracks.push(...ytRes.tracks);
+            } catch (_) {}
+        }
+
+        // ── 2. Spotify (good metadata + popularity) ──────────────────────────
+        try {
+            const spRes = await player.search(song, {
                 requestedBy: inter.member,
-                searchEngine: QueryType.SOUNDCLOUD_SEARCH
+                searchEngine: QueryType.SPOTIFY_SEARCH
+            });
+            if (spRes?.tracks?.length) rawTracks.push(...spRes.tracks);
+        } catch (_) {}
+
+        // ── 3. YouTube optional fallback ─────────────────────────────────────
+        if (!rawTracks.length) {
+            try {
+                const ytRes = await player.search(song, {
+                    requestedBy: inter.member,
+                    searchEngine: QueryType.YOUTUBE_SEARCH
+                });
+                if (ytRes?.tracks?.length) rawTracks.push(...ytRes.tracks);
+            } catch (_) {}
+        }
+
+        if (!rawTracks.length) {
+            return inter.editReply({
+                embeds: [new EmbedBuilder()
+                    .setAuthor({ name: '❌  No search results found' })
+                    .setColor('#ED4245')]
             });
         }
 
-        if (!res?.tracks.length) return inter.editReply({ content: await Translate(`No results found <${inter.member}>... try again ? <❌>`) });
+        // ── 3. Deduplicate → rank → top 10 ──────────────────────────────────
+        const uniqueMap = new Map();
+        for (const t of rawTracks) {
+            if (!uniqueMap.has(t.url)) uniqueMap.set(t.url, t);
+        }
+        const ranked = rankSearchResults(Array.from(uniqueMap.values()), song).slice(0, 10);
 
-        const queue = player.nodes.create(inter.guild, {
-            metadata: {
-             channel: inter.channel
-                    },
-            spotifyBridge: client.config.opt.spotifyBridge,
-            volume: client.config.opt.defaultvolume,
-            leaveOnEnd: client.config.opt.leaveOnEnd,
-            leaveOnEmpty: client.config.opt.leaveOnEmpty
-        });
-        const maxTracks = res.tracks.slice(0, 10);
-
-        const embed = new EmbedBuilder()
-            .setColor('#2f3136')
-            .setAuthor({ name: await Translate(`Results for <${song}>`), iconURL: client.user.displayAvatarURL({ size: 1024, dynamic: true }) })
-            .setDescription(await Translate(`<${maxTracks.map((track, i) => `**${i + 1}**. ${track.title} | ${track.author}`).join('\n')}\n\n> Select choice between <**1**> and <**${maxTracks.length}**> or <**cancel** ⬇️>`))
-            .setTimestamp()
-            .setFooter({ text: await Translate('Music comes first - Made with heart by the Community <❤️>'), iconURL: inter.member.avatarURL({ dynamic: true }) })
-
-        inter.editReply({ embeds: [embed] });
-
-        const collector = inter.channel.createMessageCollector({
-            time: 15000,
-            max: 1,
-            errors: ['time'],
-            filter: m => m.author.id === inter.member.id
+        // ── 4. Build dropdown options ────────────────────────────────────────
+        const options = ranked.map((track, i) => {
+            const popBadge = formatPopularityBadge(track);
+            const badge    = popBadge ? ` • ${popBadge}` : '';
+            return {
+                label:       `${i + 1}. ${track.title}`.substring(0, 100),
+                description: `${track.author} • ${track.duration}${badge}`.substring(0, 100),
+                value:       i.toString(),
+                emoji:       i === 0 ? '🏆' : (i < 3 ? '🔥' : '🎵')
+            };
         });
 
-        collector.on('collect', async (query) => {
-            collector.stop();
-            if (query.content.toLowerCase() === 'cancel') {
-                return inter.followUp({ content: await Translate(`Search cancelled <✅>`), ephemeral: true });
+        const selectMenu = new StringSelectMenuBuilder()
+            .setCustomId('select_track')
+            .setPlaceholder('🔥 Most Popular Songs — Choose a track...')
+            .addOptions(options);
+
+        const row = new ActionRowBuilder().addComponents(selectMenu);
+
+        // ── 5. Search result embed ───────────────────────────────────────────
+        const medals = ['🥇', '🥈', '🥉'];
+        const listLines = ranked.map((t, idx) => {
+            const popBadge = formatPopularityBadge(t);
+            const badge    = popBadge ? ` · **${popBadge}**` : '';
+            const icon     = medals[idx] || `**${idx + 1}.**`;
+            return `${icon} [${t.title}](${t.url}) — \`${t.duration}\`${badge}\n` +
+                   `   ↳ by **${t.author}**`;
+        });
+
+        const searchEmbed = new EmbedBuilder()
+            .setAuthor({
+                name: `🔍 Popular Results for "${song}"`,
+                iconURL: client.user.displayAvatarURL({ size: 64 })
+            })
+            .setDescription(
+                listLines.join('\n') +
+                '\n\n*Select a song from the dropdown menu below to play.*'
+            )
+            .setColor('#5865F2')
+            .setFooter({ text: 'Ranked by Spotify popularity & relevance • Selection active for 45 seconds' })
+            .setTimestamp();
+
+        const responseMsg = await inter.editReply({ embeds: [searchEmbed], components: [row] });
+
+        // ── 6. Handle selection ──────────────────────────────────────────────
+        const collector = responseMsg.createMessageComponentCollector({
+            componentType: ComponentType.StringSelect,
+            time: 45_000
+        });
+
+        collector.on('collect', async (selectInter) => {
+            if (selectInter.user.id !== inter.user.id) {
+                return selectInter.reply({
+                    content: '❌ Only the person who searched can pick a track.',
+                    flags: 64
+                });
             }
 
-            const value = parseInt(query);
-            if (!value || value <= 0 || value > maxTracks.length) {
-                return inter.followUp({ content: await Translate(`Invalid response, try a value between <**1**> and <**${maxTracks.length}**> or <**cancel**>... try again ? <❌>`), ephemeral: true });
-            }
+            await selectInter.deferUpdate();
+            collector.stop('selected');
+
+            const chosenIdx     = parseInt(selectInter.values[0], 10);
+            const selectedTrack = ranked[chosenIdx];
 
             try {
+                let queue = player.nodes.get(inter.guild.id);
+                const autoplayState = client.autoplayStates?.get(inter.guild.id) ?? false;
+
+                if (!queue) {
+                    queue = player.nodes.create(inter.guild, {
+                        metadata: {
+                            channel: inter.channel,
+                            autoplay: autoplayState,
+                            lastTrack: null,
+                            playedHistory: []
+                        },
+                        leaveOnEmpty:         client.config.opt.leaveOnEmpty,
+                        leaveOnEmptyCooldown: client.config.opt.leaveOnEmptyCooldown,
+                        leaveOnEnd:           client.config.opt.leaveOnEnd,
+                        leaveOnEndCooldown:   client.config.opt.leaveOnEndCooldown,
+                        selfDeaf: true,
+                        volume:   client.config.opt.volume,
+                    });
+
+                    if (autoplayState) {
+                        const { QueueRepeatMode } = require('discord-player');
+                        queue.setRepeatMode(QueueRepeatMode.AUTOPLAY);
+                    }
+                }
+
                 if (!queue.connection) await queue.connect(inter.member.voice.channel);
-            } catch {
-                await player.deleteQueue(inter.guildId);
-                return inter.followUp({ content: await Translate(`I can't join the voice channel <${inter.member}>... try again ? <❌>`), ephemeral: true });
+
+                queue.addTrack(selectedTrack);
+                if (!queue.isPlaying()) await queue.node.play();
+
+                const popBadge = formatPopularityBadge(selectedTrack);
+                const badgeTag = popBadge ? ` · 🔥 \`${popBadge}\`` : '';
+                const queuePos = queue.tracks.size;
+
+                const successEmbed = new EmbedBuilder()
+                    .setAuthor({
+                        name: '✅  Track Added to Queue',
+                        iconURL: client.user.displayAvatarURL({ size: 64 })
+                    })
+                    .setTitle(selectedTrack.title.length > 256 ? selectedTrack.title.substring(0, 253) + '...' : selectedTrack.title)
+                    .setURL(selectedTrack.url)
+                    .setThumbnail(selectedTrack.thumbnail || null)
+                    .setDescription(
+                        `> 👤  **Artist:** ${selectedTrack.author}\n` +
+                        `> ⏱  **Duration:** \`${selectedTrack.duration}\`${badgeTag}\n` +
+                        (queuePos > 1 ? `> 📋  **Position in queue:** #${queuePos}` : `> 🎵  **Playing now!**`)
+                    )
+                    .setColor('#57F287')
+                    .setFooter({
+                        text: `Requested by ${inter.member.displayName}`,
+                        iconURL: inter.member.displayAvatarURL()
+                    })
+                    .setTimestamp();
+
+                await inter.editReply({ embeds: [successEmbed], components: [] });
+
+            } catch (err) {
+                console.error('[Search Select Error]', err);
+                await inter.editReply({
+                    content: '❌ Failed to play the selected track.',
+                    embeds: [],
+                    components: []
+                });
             }
-
-            await inter.followUp({content: await Translate(`Loading your search... <🎧>`), ephemeral: true });
-
-            queue.addTrack(res.tracks[query.content - 1]);
-
-            if (!queue.isPlaying()) await queue.node.play();
         });
 
-        collector.on('end', async (msg, reason) => {
-            if (reason === 'time') return inter.followUp({ content: await Translate(`Search timed out <${inter.member}>... try again ? <❌>`), ephemeral: true });
+        collector.on('end', async (_, reason) => {
+            if (reason !== 'selected') {
+                const timeoutEmbed = new EmbedBuilder()
+                    .setAuthor({ name: '⏱  Search timed out — no song was selected' })
+                    .setColor('#ED4245');
+                await inter.editReply({ embeds: [timeoutEmbed], components: [] }).catch(() => {});
+            }
         });
     }
-}
+};

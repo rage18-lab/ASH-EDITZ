@@ -1,14 +1,20 @@
 const { EmbedBuilder } = require('discord.js');
-const { Translate } = require('../../process_tools');
 
 module.exports = (queue) => {
     if (!client.config.app.extraMessages) return;
-    
-    (async () => {
-        const embed = new EmbedBuilder()
-        .setAuthor({ name: await Translate(`All the songs in playlist added into the queue <✅>`)})
-        .setColor('#2f3136');
 
-        queue.metadata.channel.send({ embeds: [embed] });
-    })()
+    const embed = new EmbedBuilder()
+        .setAuthor({
+            name: '＋  Playlist Added to Queue',
+            iconURL: client.user.displayAvatarURL({ size: 64 })
+        })
+        .setDescription(
+            '> 🎵  All songs from the playlist have been added!\n' +
+            `> 📋  **${queue.tracks.size}** tracks now in queue`
+        )
+        .setColor('#00F5FF')
+        .setFooter({ text: '⚡ Hot Pursuit  •  Music Bot' })
+        .setTimestamp();
+
+    queue.metadata.channel.send({ embeds: [embed] });
 }

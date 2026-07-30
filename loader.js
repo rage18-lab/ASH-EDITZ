@@ -52,20 +52,24 @@ GetTranslationModule().then(() => {
     }
   });
 
-  client.once("ready", () => {
-    if (client.config.app.global) {
-      client.application.commands.set(commandsArray).catch((e) =>
-        console.error('Failed to register global commands:', e)
-      );
-    } else {
-      const guild = client.guilds.cache.get(client.config.app.guild);
-      if (guild) {
-        guild.commands.set(commandsArray).catch((e) =>
-          console.error('Failed to register guild commands:', e)
-        );
+  client.once("clientReady", async () => {
+    try {
+      if (client.config.app.global) {
+        await client.application.commands.set(commandsArray);
+        console.log('✅ Global commands registered');
+      } else if (client.config.app.guild && client.config.app.guild !== 'xxx' && client.config.app.guild !== 'YOUR_GUILD_ID_HERE') {
+        const guild = client.guilds.cache.get(client.config.app.guild) || await client.guilds.fetch(client.config.app.guild).catch(() => null);
+        if (guild) {
+          await guild.commands.set(commandsArray);
+          console.log(`✅ Guild commands registered for ${guild.name} (${guild.id})`);
+        } else {
+          console.warn('Guild ID not found or inaccessible. Ensure the bot is in the guild and GUILD_ID is correct.');
+        }
       } else {
-        console.warn('Guild ID not found in cache, skipping guild command registration.');
+        console.warn('Guild command registration skipped because app.global is false and GUILD_ID is not configured correctly.');
       }
+    } catch (e) {
+      console.error('Failed to register commands:', e);
     }
   });
 

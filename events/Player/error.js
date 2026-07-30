@@ -3,6 +3,14 @@ const { Translate } = require('../../process_tools');
 
 module.exports = (queue, error) => {
     (async () => {
+        if (error) {
+            const msg = error.message || String(error);
+            if (msg.includes('IP discovery') || msg.includes('aborted') || msg.includes('AbortError')) {
+                console.warn('Ignored harmless internal player error:', msg);
+                return;
+            }
+        }
+
         console.error('Error emitted from the Bot:', error);
 
         if (queue?.metadata?.channel) {

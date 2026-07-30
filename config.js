@@ -37,9 +37,19 @@ module.exports = {
         leaveOnEnd: true,
         leaveOnEndCooldown: 30000,
         discordPlayer: {
+            // Increase connection timeout so slow SoundCloud streams don't abort
+            connectionTimeout: 30000,
+            // ⚠️ Must be FALSE — IOS client returns MP4/AAC which needs FFmpeg → Opus for Discord
+            skipFFmpeg: false,
             ytdlOptions: {
                 quality: 'highestaudio',
-                highWaterMark: 1 << 25
+                highWaterMark: 1 << 25,
+                // Longer timeouts for slow connections
+                requestOptions: {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    }
+                }
             }
         }
     }

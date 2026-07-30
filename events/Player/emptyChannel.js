@@ -1,5 +1,4 @@
 const { EmbedBuilder } = require('discord.js');
-const { Translate } = require('../../process_tools');
 
 module.exports = (queue) => {
     if (queue.metadata.lyricsThread) {
@@ -9,11 +8,32 @@ module.exports = (queue) => {
         });
     }
 
+    const guildId  = queue.guild?.id;
+    const is247    = global.client?.tfStates?.get(guildId) === true;
+
+    // ── 24/7 mode: stay in VC, store last VC for rejoin ─────────────────────
+    if (is247) {
+        const vcId = queue.channel?.id;
+        if (vcId) global.client.tfStates.set(`${guildId}_vc`, vcId);
+        // Don't leave, don't send a message — just stay silently
+        return;
+    }
+
     (async () => {
         const embed = new EmbedBuilder()
-        .setAuthor({ name: await Translate(`Nobody is in the voice channel, leaving the voice channel!  <❌>`)})
-        .setColor('#2f3136');
+            .setAuthor({
+                name: '👻  Empty Voice Channel',
+                iconURL: global.client?.user?.displayAvatarURL({ size: 64 })
+            })
+            .setDescription(
+                '> 🚶  Nobody is in the voice channel.\n' +
+                '> 👋  Leaving and clearing the queue!'
+            )
+            .setColor('#FF2056')
+            .setFooter({ text: 'Hot Pursuit  •  Music Bot' })
+            .setTimestamp();
 
         queue.metadata.channel.send({ embeds: [embed] });
     })()
 }
+

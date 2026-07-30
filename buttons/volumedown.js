@@ -10,5 +10,5 @@ module.exports = async ({ inter, queue }) => {
     if (queue.node.volume === vol) return inter.editReply({ content: await Translate(`The volume you want to change is already the current one <${inter.member}>... try again ? <❌>`) });
 
     const success = queue.node.setVolume(vol);
-    return inter.editReply({ content: success ? await Translate(`The volume has been modified to <${vol}/${maxVol}% 🔊>`) : await Translate(`Something went wrong <${inter.member}>... try again ? <❌>`) });
+    return inter.editReply({ content: success ? await Translate(`The volume has been modified to <${vol}/${maxVol}% 🔊>`) : await Translate(`Unable to adjust the volume right now. Please try again in a moment <❌>`) });
 }

@@ -15,7 +15,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setColor('#2f3136')
-            .setAuthor({ name: success ? await Translate(`Current music <${queue.currentTrack.title}> skipped <✅>`) : await Translate(`Something went wrong <${inter.member}>... try again ? <❌>`) });
+            .setAuthor({ name: success ? await Translate(`Current music <${queue.currentTrack.title}> skipped <✅>`) : await Translate(`Unable to skip the track right now. Please try again in a moment <❌>`) });
 
         return inter.editReply({ embeds: [embed] });
     }
