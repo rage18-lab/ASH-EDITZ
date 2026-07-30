@@ -22,6 +22,7 @@
         "opusscript": "^0.0.8",
         "translate": "^3.0.0",
         "tweetnacl": "^1.0.3",
+        "undici": "^8.9.0",
         "youtubei.js": "^17.2.0"
     },
     "allowScripts": {

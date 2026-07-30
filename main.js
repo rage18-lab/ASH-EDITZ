@@ -1,5 +1,15 @@
 require('dotenv').config();
 
+// ── Tell prism-media/ffmpeg where the ffmpeg binary lives ────────────────────
+// Must be set BEFORE requiring discord-player, otherwise prism-media
+// won't find ffmpeg on Railway (Linux) or any environment without system ffmpeg.
+try {
+    process.env.FFMPEG_PATH = require('ffmpeg-static');
+    console.log('[Boot] ffmpeg-static path set:', process.env.FFMPEG_PATH);
+} catch (e) {
+    console.warn('[Boot] ffmpeg-static not found, relying on system ffmpeg:', e.message);
+}
+
 const { Player } = require('discord-player');
 const { Client, GatewayIntentBits } = require('discord.js');
 const {
