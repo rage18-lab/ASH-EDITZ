@@ -143,7 +143,7 @@ class CustomYouTubeExtractor extends BaseExtractor {
         // ffmpeg handles the HTTP request internally with its own headers.
         try {
             const tube = await getInnertube();
-            const info = await tube.getBasicInfo(videoId, { client: 'IOS' });
+            const info = await tube.getInfo(videoId, { client: 'IOS' });
 
             // Prefer audio/mp4 (AAC) — best compatibility with ffmpeg on Railway
             const format = info.chooseFormat?.({ quality: 'best', format: 'mp4', type: 'audio' })
