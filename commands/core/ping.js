@@ -6,11 +6,6 @@ module.exports = {
 
     async execute({ client, inter }) {
         const wsLatency = Math.round(client.ws.ping);
-        const start = Date.now();
-
-        // Edit the deferred reply to measure round-trip
-        await inter.editReply({ content: '📡 Measuring...' });
-        const apiLatency = Date.now() - start;
 
         const getBar = (ms) => {
             if (ms < 100) return '🟢 Excellent';
@@ -26,7 +21,6 @@ module.exports = {
             })
             .setDescription(
                 `> **WebSocket Latency:** \`${wsLatency}ms\` ${getBar(wsLatency)}\n` +
-                `> **API Round-Trip:** \`${apiLatency}ms\` ${getBar(apiLatency)}\n` +
                 `> **Uptime:** \`${formatUptime(client.uptime)}\``
             )
             .setColor(wsLatency < 200 ? '#57F287' : wsLatency < 400 ? '#FEE75C' : '#ED4245')
