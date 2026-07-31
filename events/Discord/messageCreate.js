@@ -81,15 +81,20 @@ module.exports = async (client, message) => {
     // ── 2. Owner Mention Detection ──────────────────────────────────────────
     if (ownerId && ownerId !== 'xxx' && ownerId !== 'YOUR_DISCORD_USER_ID_HERE') {
         if (message.mentions.users.has(ownerId) && message.author.id !== ownerId) {
-            const ownerMember = await message.guild.members.fetch(ownerId).catch(() => null);
-            const ownerTag    = ownerMember?.displayName || 'my Sensei';
+            // Only respond if the message is JUST the mention (no other text) to avoid spam
+            const textWithoutMention = message.content.replace(new RegExp(`<@!?${ownerId}>`, 'g'), '').trim();
+            
+            if (textWithoutMention.length === 0) {
+                const ownerMember = await message.guild.members.fetch(ownerId).catch(() => null);
+                const ownerTag    = ownerMember?.displayName || 'my Master';
 
-            const embed = new EmbedBuilder()
-                .setColor('#F5A623')
-                .setDescription(`🙏 Bro, you just tagged **${ownerTag}** — that's my **Sensei**! Show some respect 😤`)
-                .setFooter({ text: `Triggered by ${message.author.displayName}`, iconURL: message.author.displayAvatarURL() });
+                const embed = new EmbedBuilder()
+                    .setColor('#2B2D31')
+                    .setDescription(`✨ **${ownerTag}** is currently unavailable. Please leave a message and they will get back to you!`)
+                    .setFooter({ text: `Automated Response` });
 
-            return message.reply({ embeds: [embed] });
+                return message.reply({ embeds: [embed] });
+            }
         }
     }
 

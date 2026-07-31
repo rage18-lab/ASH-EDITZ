@@ -110,7 +110,7 @@ KV5=function(n,F,x){return n.call.apply(n.bind,arguments)};
 g.RO=function(n,F,x){g.RO=KV5;return g.RO.apply(null,arguments)};
 g.Xz=function(n,F){var x=Array.prototype.slice.call(arguments,1);return function(){var t=x.slice();t.push.apply(t,arguments);return n.apply(this,t)}};
 g.zK=function(){return Date.now()};
-ZB=function(n){g.US("yt.abuse.playerAttLoaderRun",n)};
+ZB=function(n){g.US("disabled.playerAttLoaderRun",n)};
 r7=function(n){return n};
 g.Sy=function(n,F){function x(){}
 x.prototype=F.prototype;n.Dt=F.prototype;n.prototype=new x;n.prototype.constructor=n;n.uf=function(t,K,h){for(var m=Array(arguments.length-2),d=2;d<arguments.length;d++)m[d-2]=arguments[d];return F.prototype[K].apply(t,m)}};
