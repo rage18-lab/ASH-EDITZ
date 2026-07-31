@@ -168,7 +168,7 @@ module.exports = {
             return inter.editReply({
                 embeds: [new EmbedBuilder()
                     .setAuthor({ name: '❌  Playback failed — please try again' })
-                    .setDescription(`\`${error.message}\``)
+                    .setDescription(`\`${error.message.substring(0, 200)}${error.message.length > 200 ? '...' : ''}\``)
                     .setColor('#ED4245')]
             });
         }

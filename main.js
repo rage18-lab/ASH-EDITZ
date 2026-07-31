@@ -55,8 +55,13 @@ const player = new Player(client, {
         }
     }
 
-    // ── 2. Register Custom YouTube Extractor (IOS client — no cipher, direct URLs) ──
+    // ── 2. Disable default YoutubeExtractor & Register Custom Extractor ──
     try {
+        const { YoutubeExtractor } = require('@discord-player/extractor');
+        if (player.extractors.get(YoutubeExtractor.identifier)) {
+            player.extractors.unregister(YoutubeExtractor);
+        }
+        
         const { CustomYouTubeExtractor } = require('./extractors/CustomYouTubeExtractor');
         await player.extractors.register(CustomYouTubeExtractor, {});
         console.log('✅ CustomYouTubeExtractor loaded (IOS client, direct stream URLs)');
