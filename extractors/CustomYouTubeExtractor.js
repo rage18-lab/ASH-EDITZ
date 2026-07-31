@@ -75,7 +75,7 @@ class CustomYouTubeExtractor extends BaseExtractor {
                 return await this._handleSearch(searchQuery, context);
             }
         } catch (e) {
-            this.debug('CustomYouTubeExtractor handle error: ' + e.message);
+            console.error('[YT Extractor] handle error:', e);
             return this.createResponse(null, []);
         }
     }
