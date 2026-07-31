@@ -60,15 +60,18 @@ class CustomYouTubeExtractor extends BaseExtractor {
             type === 'youtubeSearch' ||
             type === 'youtubeVideo' ||
             type === 'youtubePlaylist' ||
-            (type === 'autoSearch' && /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/.test(query)) ||
-            /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/.test(query) ||
+            (type === 'autoSearch' && /^(https?:\/\/)?([a-zA-Z0-9-]+\.)*(youtube\.com|youtu\.be)\/.+/i.test(query)) ||
+            /^(https?:\/\/)?([a-zA-Z0-9-]+\.)*(youtube\.com|youtu\.be)\/.+/i.test(query) ||
             query.startsWith('ytsearch:')
         );
     }
 
     async handle(query, context) {
         try {
-            if (/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/.test(query)) {
+            if (/^(https?:\/\/)?([a-zA-Z0-9-]+\.)*(youtube\.com|youtu\.be)\/.+/i.test(query)) {
+                if (query.includes('list=')) {
+                    return await this._handlePlaylist(query, context);
+                }
                 return await this._handleUrl(query, context);
             } else {
                 const searchQuery = query.replace(/^ytsearch:/, '').trim();
@@ -104,6 +107,64 @@ class CustomYouTubeExtractor extends BaseExtractor {
         });
 
         return this.createResponse(null, [track]);
+    }
+
+    async _handlePlaylist(url, context) {
+        const tube = await getInnertube();
+        let playlistId;
+        try {
+            playlistId = new URL(url).searchParams.get('list');
+        } catch {
+            const match = url.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+            if (match) playlistId = match[1];
+        }
+        if (!playlistId) throw new Error('No playlist ID found in URL: ' + url);
+
+        const playlist = await tube.getPlaylist(playlistId, { client: 'IOS' });
+        
+        const tracks = (playlist.items || []).map(item => {
+            let videoId, title, author, durationStr;
+            
+            if (item.type === 'LockupView') {
+                videoId = item.content_id;
+                title = item.metadata?.title?.text || 'Unknown';
+                author = 'YouTube';
+                durationStr = '0:00';
+            } else {
+                videoId = item.id;
+                title = item.title?.text || item.title || 'Unknown';
+                author = item.author?.name || 'Unknown';
+                durationStr = item.duration?.text || '0:00';
+            }
+
+            if (!videoId) return null;
+
+            return new Track(this.context.player, {
+                title:       title,
+                author:      author,
+                url:         `https://www.youtube.com/watch?v=${videoId}`,
+                thumbnail:   `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+                duration:    durationStr,
+                durationMS:  0,
+                source:      'youtube',
+                engine:      this,
+                queryType:   context.type,
+                metadata:    { videoId },
+                requestedBy: context.requestedBy,
+            });
+        }).filter(t => t !== null);
+
+        const playlistInfo = {
+            title: playlist.info?.title || 'YouTube Playlist',
+            url: url,
+            thumbnail: tracks[0]?.thumbnail || '',
+            author: { name: playlist.info?.author?.name || 'YouTube' },
+            tracks,
+            type: 'playlist',
+            source: 'youtube',
+        };
+
+        return this.createResponse(playlistInfo, tracks);
     }
 
     async _handleSearch(query, context) {
@@ -229,7 +290,7 @@ class CustomYouTubeExtractor extends BaseExtractor {
     }
 
     _extractVideoId(url) {
-        const match = url?.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
+        const match = url?.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([a-zA-Z0-9_-]{11})/);
         return match ? match[1] : null;
     }
 

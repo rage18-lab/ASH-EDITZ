@@ -55,18 +55,22 @@ const player = new Player(client, {
         }
     }
 
-    // ── 2. Disable default YoutubeExtractor & Register Custom Extractor ──
+    // ── 2. Register Custom Extractor and default YoutubeiExtractor ──
     try {
         const { YoutubeExtractor } = require('@discord-player/extractor');
-        if (player.extractors.get(YoutubeExtractor.identifier)) {
+        if (YoutubeExtractor && player.extractors.get(YoutubeExtractor.identifier)) {
             player.extractors.unregister(YoutubeExtractor);
         }
         
         const { CustomYouTubeExtractor } = require('./extractors/CustomYouTubeExtractor');
         await player.extractors.register(CustomYouTubeExtractor, {});
         console.log('✅ CustomYouTubeExtractor loaded (IOS client, direct stream URLs)');
+        
+        const { YoutubeiExtractor } = require('discord-player-youtubei');
+        await player.extractors.register(YoutubeiExtractor, {});
+        console.log('✅ YoutubeiExtractor loaded (Fallback default for text searches)');
     } catch (e) {
-        console.error('❌ CustomYouTubeExtractor FAILED to load:', e.message);
+        console.error('❌ Extractor load failed:', e.message);
     }
 
     require('./loader');

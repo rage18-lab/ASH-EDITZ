@@ -23,6 +23,7 @@ module.exports = {
 
         // ── Resolve track ────────────────────────────────────────────────────
         let track = null;
+        let playlist = null;
 
         try {
             if (isYouTube || isSpotify || isURL) {
@@ -34,9 +35,10 @@ module.exports = {
 
                 if (res?.tracks?.length) {
                     track = res.tracks[0];
+                    playlist = res.playlist;
 
-                    // Spotify tracks need bridging to YouTube for actual streaming
-                    if (track.source === 'spotify' || track.source === 'apple_music') {
+                    // Bridge only the first track to guarantee immediate playback info
+                    if (!playlist && (track.source === 'spotify' || track.source === 'apple_music')) {
                         track = await bridgeToYouTube(player, track, inter.member);
                     }
                 }
@@ -45,10 +47,8 @@ module.exports = {
                 const ytRes = await player.search(song, {
                     requestedBy: inter.member,
                     searchEngine: QueryType.AUTO,
-                    // ytsearch: prefix routes to CustomYouTubeExtractor
                 });
 
-                // Try YouTube first (our custom extractor)
                 const ytDirect = await player.search(`ytsearch:${song}`, {
                     requestedBy: inter.member,
                     searchEngine: QueryType.AUTO,
@@ -56,10 +56,11 @@ module.exports = {
 
                 if (ytDirect?.tracks?.length) {
                     track = ytDirect.tracks[0];
+                    playlist = ytDirect.playlist;
                 } else if (ytRes?.tracks?.length) {
                     track = ytRes.tracks[0];
-                    // Bridge Spotify metadata tracks to YouTube streams
-                    if (track.source === 'spotify' || track.source === 'apple_music') {
+                    playlist = ytRes.playlist;
+                    if (!playlist && (track.source === 'spotify' || track.source === 'apple_music')) {
                         track = await bridgeToYouTube(player, track, inter.member);
                     }
                 }
@@ -71,19 +72,13 @@ module.exports = {
         if (!track) {
             return inter.editReply({
                 embeds: [new EmbedBuilder()
-                    .setAuthor({ name: '❌  No results found' })
-                    .setDescription(
-                        `Could not find **"${song}"**.\n\n` +
-                        `**Tips:**\n` +
-                        `• Try full name + artist: \`Blinding Lights The Weeknd\`\n` +
-                        `• Paste a direct YouTube or Spotify link\n` +
-                        `• Use \`/search\` to browse results`
-                    )
+                    .setAuthor({ name: '❌  No songs found' })
+                    .setDescription(`We couldn't find any results for **${song}**.\nPlease try another search term or paste a direct YouTube/Spotify link.`)
                     .setColor('#ED4245')]
             });
         }
 
-        console.log(`[Play] "${song}" → [${track.source}] ${track.title} by ${track.author}`);
+        console.log(`[Play] "${song}" → [${track.source}] ${track.title} by ${track.author} (Playlist: ${!!playlist})`);
 
         // ── Queue & play ─────────────────────────────────────────────────────
         try {
@@ -115,7 +110,8 @@ module.exports = {
             }
 
             const wasPlaying = queue.isPlaying();
-            queue.addTrack(track);
+            queue.addTrack(playlist ? playlist : track);
+            
             if (!wasPlaying) await queue.node.play();
 
             const srcIcon = track.source === 'spotify'     ? '🟢 Spotify'
@@ -127,13 +123,14 @@ module.exports = {
                 return inter.editReply({
                     embeds: [new EmbedBuilder()
                         .setAuthor({
-                            name: '▶️  Starting Playback',
+                            name: playlist ? `▶️  Starting Playlist: ${playlist.title}` : '▶️  Starting Playback',
                             iconURL: client.user.displayAvatarURL({ size: 64 })
                         })
                         .setThumbnail(track.thumbnail || null)
                         .setDescription(
                             `> 🎵  **[${track.title}](${track.url})**\n` +
                             `> 🎤  by **${track.author}** • \`${track.duration}\`\n` +
+                            (playlist ? `> 📑  **Added ${playlist.tracks.length} tracks**\n` : '') +
                             `> 📡  Source: ${srcIcon}`
                         )
                         .setColor('#57F287')]
@@ -143,15 +140,14 @@ module.exports = {
             return inter.editReply({
                 embeds: [new EmbedBuilder()
                     .setAuthor({
-                        name: '✅  Added to Queue',
+                        name: playlist ? `✅  Playlist Added to Queue` : '✅  Added to Queue',
                         iconURL: client.user.displayAvatarURL({ size: 64 })
                     })
-                    .setTitle(track.title.length > 256 ? track.title.substring(0, 253) + '...' : track.title)
-                    .setURL(track.url)
+                    .setTitle(playlist ? playlist.title : (track.title.length > 256 ? track.title.substring(0, 253) + '...' : track.title))
+                    .setURL(playlist ? playlist.url : track.url)
                     .setThumbnail(track.thumbnail || null)
                     .setDescription(
-                        `> 👤  **Artist:** ${track.author}\n` +
-                        `> ⏱  **Duration:** \`${track.duration}\`\n` +
+                        (playlist ? `> 📑  **Tracks:** ${playlist.tracks.length}\n` : `> 👤  **Artist:** ${track.author}\n> ⏱  **Duration:** \`${track.duration}\`\n`) +
                         `> 🔄  **Autoplay:** ${autoplayEnabled ? '✅ On' : '❌ Off'}\n` +
                         `> 📋  **Position:** #${queue.tracks.size}`
                     )
