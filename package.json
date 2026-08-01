@@ -1,20 +1,38 @@
 {
-    "name": "ash-editz-core-bot",
-    "main": "main.js",
-    "author": "rage18-lab",
-    "version": "1.0.0",
-    "repository": "https://github.com/rage18-lab/ASH-EDITZ.git",
-    "description": "ASH EDITZ — Core Discord Bot",
-    "scripts": {
-        "start": "node main.js"
-    },
-    "dependencies": {
-        "@google/generative-ai": "^0.24.1",
-        "discord-api-types": "^0.38.52",
-        "discord.js": "^14.13.0",
-        "dotenv": "^16.4.5",
-        "ms": "^3.0.0-canary.1",
-        "translate": "^3.0.0",
-        "undici": "^8.9.0"
-    }
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "groove",
+  "main": "Shard.js",
+  "scripts": {
+    "start": "node --no-warnings Shard.js",
+    "dev": "nodemon --no-warnings Shard.js"
+  },
+  "dependencies": {
+    "@discordjs/voice": "^0.17.0",
+    "@flytri/lyrics-finder": "^1.0.7",
+    "@iamtraction/google-translate": "^2.0.1",
+    "@napi-rs/canvas": "^0.1.77",
+    "archiver": "^7.0.1",
+    "axios": "^1.13.4",
+    "better-sqlite3": "^12.6.2",
+    "canvacard": "^6.0.5",
+    "canvafy": "^7.2.1",
+    "canvas": "^3.1.2",
+    "delay": "^6.0.0",
+    "discord-api-types": "^0.38.37",
+    "discord-hybrid-sharding": "^2.2.6",
+    "discord.js": "14.22.1",
+    "dokdo":"latest",
+    "dotenv": "^16.4.7",
+    "kazagumo": "^3.3.0",
+    "kazagumo-spotify": "^2.1.1",
+    "moment": "^2.30.1",
+    "moment-duration-format": "^2.3.2",
+    "moment-timezone": "^0.5.48",
+    "musicard": "^2.0.5",
+    "musicard-quartz": "^1.0.0",
+    "quickchart-js": "^3.1.3",
+    "shoukaku": "^4.1.1",
+    "songcard": "^1.4.1",
+    "undici": "latest"
+  }
 }
