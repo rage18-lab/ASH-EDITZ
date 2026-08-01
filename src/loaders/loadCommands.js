@@ -10,37 +10,42 @@ module.exports = (client) => {
       .readdirSync(path.join(commandsPath, dir))
       .filter((file) => file.endsWith(".js"));
     for (const file of commandFiles) {
-      const command = require(path.join(commandsPath, dir, file));
+      try {
+        const command = require(path.join(commandsPath, dir, file));
 
-      client.commands.set(command.name, command);
-      if (command.aliases && Array.isArray(command.aliases)) {
-        command.aliases.forEach((alias) => client.aliases.set(alias, command.name));
-      } else if (command.aliases) {
-        client.aliases.set(command.aliases, command.name);
+        client.commands.set(command.name, command);
+        if (command.aliases && Array.isArray(command.aliases)) {
+          command.aliases.forEach((alias) => client.aliases.set(alias, command.name));
+        } else if (command.aliases) {
+          client.aliases.set(command.aliases, command.name);
+        }
+
+        if (command.slashExecute || command.slashOptions) {
+          const slashData = {
+            name: command.name,
+            description: command.description || "No description provided",
+            options: command.slashOptions || [],
+            category: command.category,
+            execute: command.execute,
+            slashExecute: command.slashExecute,
+            autocomplete: command.autocomplete,
+            run: command.run,
+            player: command.player,
+            inVoiceChannel: command.inVoiceChannel,
+            sameVoiceChannel: command.sameVoiceChannel,
+            botPerms: command.botPerms,
+            userPerms: command.userPerms,
+            owner: command.owner || false,
+            ephemeral: command.ephemeral || false,
+          };
+
+          client.slashCommands.set(command.name, slashData);
+        }
+
+        totalCommands++;
+      } catch (err) {
+        client.logger.log(`Failed to load command ${file}: ${err.message}`, "error");
       }
-
-      if (command.slashExecute || command.slashOptions) {
-        const slashData = {
-          name: command.name,
-          description: command.description || "No description provided",
-          options: command.slashOptions || [],
-          category: command.category,
-          execute: command.execute,
-          slashExecute: command.slashExecute,
-          autocomplete: command.autocomplete,
-          run: command.run,
-          player: command.player,
-          inVoiceChannel: command.inVoiceChannel,
-          sameVoiceChannel: command.sameVoiceChannel,
-          botPerms: command.botPerms,
-          userPerms: command.userPerms,
-          owner: command.owner || false,
-        };
-
-        client.slashCommands.set(command.name, slashData);
-      }
-
-      totalCommands++;
     }
   });
 

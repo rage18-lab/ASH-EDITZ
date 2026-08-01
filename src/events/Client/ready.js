@@ -35,7 +35,7 @@ module.exports = {
       try {
         const trackingEnabled = client.db.invitetracking.get(guildId);
 
-        if (!trackingEnabled || !trackingEnabled.status) continue;
+        if (!trackingEnabled || !trackingEnabled.enabled) continue;
 
         const me = guild.members.me || await guild.members.fetchMe().catch(() => null);
         if (!me || !me.permissions.has(PermissionFlagsBits.ManageGuild)) continue;

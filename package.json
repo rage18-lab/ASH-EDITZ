@@ -21,7 +21,7 @@
     "discord-api-types": "^0.38.37",
     "discord-hybrid-sharding": "^2.2.6",
     "discord.js": "14.22.1",
-    "dokdo":"latest",
+    "dokdo": "latest",
     "dotenv": "^16.4.7",
     "kazagumo": "^3.3.0",
     "kazagumo-spotify": "^2.1.1",
@@ -34,5 +34,9 @@
     "shoukaku": "^4.1.1",
     "songcard": "^1.4.1",
     "undici": "latest"
+  },
+  "allowScripts": {
+    "better-sqlite3@12.8.0": true,
+    "canvas@3.2.3": true
   }
 }
