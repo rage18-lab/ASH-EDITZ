@@ -105,18 +105,7 @@ module.exports = {
       console.log("\n⚠️ WARNING: No slash commands to deploy! client.slashCommands.size = 0\n");
     }
 
-    // You can change your bot's status (notes) right here!
-    // Simply change the text inside the backticks (` `) on the 'name:' line below.
-    // To have it update the counts regularly, we can wrap this in a setInterval again if you'd like.
-    client.user.setPresence({
-      activities: [
-        {
-          name: `I Can  Fix  You`,
-          type: ActivityType.Custom,
-        },
-      ],
-      status: "online",
-    });
+
 
   },
 };
