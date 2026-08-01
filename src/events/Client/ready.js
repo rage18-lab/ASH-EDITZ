@@ -89,13 +89,19 @@ module.exports = {
           return commandData;
         });
 
-        client.logger.log(`Deploying ${commands.length} slash commands...`, "cmd");
+        let deployCommands = commands;
+        if (deployCommands.length > 100) {
+          console.warn(`WARNING: Exceeded Discord's 100 global slash command limit. Only deploying the first 100.`);
+          deployCommands = deployCommands.slice(0, 100);
+        }
+
+        client.logger.log(`Deploying ${deployCommands.length} slash commands...`, "cmd");
 
         await rest.put(Routes.applicationCommands(client.user.id), {
-          body: commands,
+          body: deployCommands,
         });
 
-        client.logger.log(`Successfully deployed ${commands.length} slash commands.`, "cmd");
+        client.logger.log(`Successfully deployed ${deployCommands.length} slash commands.`, "cmd");
       } catch (error) {
         console.error("Error deploying slash commands:", error);
       }
