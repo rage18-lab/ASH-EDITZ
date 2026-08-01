@@ -118,7 +118,7 @@ module.exports = {
                 });
             }
 
-            let searchEngine = 'ytmsearch';
+            let searchEngine = client.config.node_source || 'ytmsearch';
             try {
                 const userPref = client.db.userpreferences.get(author.id);
                 if (userPref?.musicSource) {

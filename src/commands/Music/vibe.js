@@ -162,7 +162,7 @@ module.exports = {
         try {
           const result = await client.manager.search(query, {
             requester: interaction.user,
-            engine: "ytmsearch"
+            engine: client.config.node_source || "ytmsearch"
           });
 
           if (result && result.tracks && result.tracks.length > 0) {

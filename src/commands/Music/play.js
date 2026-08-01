@@ -55,7 +55,7 @@ module.exports = {
     }
 
     try {
-      let searchEngine = 'ytmsearch';
+      let searchEngine = client.config.node_source || 'ytmsearch';
       try {
         const userPref = client.db.userpreferences.get(interaction.user.id);
         if (userPref?.musicSource) {
@@ -211,7 +211,7 @@ module.exports = {
       if (markdownMatch) query = markdownMatch[1];
 
       const isUrl = /^https?:\/\//.test(query);
-      let searchEngine = 'ytmsearch';
+      let searchEngine = client.config.node_source || 'ytmsearch';
 
       if (!isUrl) {
         try {
@@ -800,7 +800,7 @@ module.exports = {
 
       if (query) {
         const isUrl = /^https?:\/\//.test(query);
-        let searchEngine = 'ytmsearch';
+        let searchEngine = client.config.node_source || 'ytmsearch';
 
         try {
           const userPref = client.db.userpreferences.get(message.author.id);
