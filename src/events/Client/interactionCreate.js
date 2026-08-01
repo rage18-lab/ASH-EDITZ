@@ -175,12 +175,6 @@ module.exports = {
       }
 
       try {
-        // Commands that call interaction.deferReply() themselves — skip global defer
-        const SELF_DEFERRING = ['play', 'search', 'lyrics', 'similar', 'artistradio', 'mood'];
-        if (!SELF_DEFERRING.includes(command.name) && !interaction.deferred && !interaction.replied) {
-          await interaction.deferReply({ ephemeral: !!command.ephemeral }).catch(() => {});
-        }
-
         const interactionWrapper = {
           guild: interaction.guild,
           channel: interaction.channel,
