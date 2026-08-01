@@ -1,16 +1,11 @@
 const { readdirSync } = require("fs");
 const { Collection } = require("discord.js");
-const { useMainPlayer } = require("discord-player");
 client.commands = new Collection();
 const commandsArray = [];
-const player = useMainPlayer();
 
 const { Translate, GetTranslationModule } = require("./process_tools");
 
 const discordEvents = readdirSync("./events/Discord/").filter((file) =>
-  file.endsWith(".js")
-);
-const playerEvents = readdirSync("./events/Player/").filter((file) =>
   file.endsWith(".js")
 );
 
@@ -23,14 +18,6 @@ GetTranslationModule().then(() => {
     parseLog(txtEvent);
     client.on(file.split(".")[0], DiscordEvent.bind(null, client));
     delete require.cache[require.resolve(`./events/Discord/${file}`)];
-  }
-
-  for (const file of playerEvents) {
-    const PlayerEvent = require(`./events/Player/${file}`);
-    const txtEvent = `< -> > [Loaded Player Event] <${file.split(".")[0]}>`;
-    parseLog(txtEvent);
-    player.events.on(file.split(".")[0], PlayerEvent.bind(null));
-    delete require.cache[require.resolve(`./events/Player/${file}`)];
   }
 
   readdirSync("./commands/").forEach((dirs) => {

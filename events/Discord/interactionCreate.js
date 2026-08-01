@@ -1,5 +1,4 @@
 const { EmbedBuilder, InteractionType, MessageFlags } = require('discord.js');
-const { useQueue } = require('discord-player');
 const { Translate } = require('../../process_tools');
 
 module.exports = async (client, inter) => {
@@ -52,24 +51,5 @@ module.exports = async (client, inter) => {
             return inter.editReply({ embeds: [errorEmbed] }).catch(() => {});
         }
 
-    } else if (inter.type === InteractionType.MessageComponent) {
-        const customId = inter.customId;
-        if (!customId) return;
-
-        // Ignore internally-handled pagination buttons (managed by message collectors)
-        const COLLECTOR_BUTTONS = ['lyrics_prev', 'lyrics_next', 'lyrics_page', 'lyrics_btn_prev', 'lyrics_btn_next', 'lyrics_btn_page'];
-        if (COLLECTOR_BUTTONS.includes(customId)) return;
-
-        const queue = useQueue(inter.guild);
-        const path = `../../buttons/${customId}.js`;
-
-        try {
-            delete require.cache[require.resolve(path)];
-            const button = require(path);
-            if (button) return button({ client, inter, customId, queue });
-        } catch (e) {
-            console.warn(`Button handler not found: ${customId}`);
-            return inter.editReply({ content: 'Button action not available.' }).catch(() => {});
-        }
     }
 }
