@@ -6,9 +6,6 @@ module.exports = {
   run: async (client) => {
     client.logger.log(`${client.user.username} is now online.`, "ready");
 
-    const giveawayManager = require("../../utils/giveawayManager");
-    giveawayManager.init(client);
-
     const { ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, MessageFlags } = require("discord.js");
     const rebootData = client.db.reboot.getAll()[0];
     if (rebootData) {
@@ -61,7 +58,6 @@ module.exports = {
     );
 
     for (const guild of client.guilds.cache.values()) {
-      giveawayManager.syncGiveaways(client, guild).catch(() => { });
     }
 
     if (client.slashCommands.size > 0) {
@@ -109,26 +105,18 @@ module.exports = {
       console.log("\n⚠️ WARNING: No slash commands to deploy! client.slashCommands.size = 0\n");
     }
 
-    setInterval(() => {
-      const totalMembers = client.guilds.cache.reduce((acc, guild) => acc + guild.memberCount, 0);
-      const statuses = [
-        `Serving ${client.guilds.cache.size} Guilds | ${client.users.cache.size} Users`,
-        `Use /help to get started`,
-        `Pure Musical Bliss!`,
-        `High Quality | 24/7 Music`
-      ];
+    // You can change your bot's status (notes) right here!
+    // Simply change the text inside the backticks (` `) on the 'name:' line below.
+    // To have it update the counts regularly, we can wrap this in a setInterval again if you'd like.
+    client.user.setPresence({
+      activities: [
+        {
+          name: `I Can  Fix  You`,
+          type: ActivityType.Custom,
+        },
+      ],
+      status: "online",
+    });
 
-      const status = statuses[Math.floor(Math.random() * statuses.length)];
-
-      client.user.setPresence({
-        activities: [
-          {
-            name: status,
-            type: ActivityType.Custom,
-          },
-        ],
-        status: "online",
-      });
-    }, 7000);
   },
 };

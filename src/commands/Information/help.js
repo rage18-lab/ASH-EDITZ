@@ -34,10 +34,6 @@ const categoryInfo = {
         emoji: '<:bosz:1490275627406725252>',
         description: 'Shows utility commands'
     },
-    'Giveaway': {
-        emoji: '<:icon_17:1490275459831697419>',
-        description: 'Shows giveaway commands'
-    },
     'Filters': {
         emoji: '<:floil:1490275636823195718>',
         description: 'Shows filter commands'
@@ -60,7 +56,7 @@ const categoryInfo = {
     }
 };
 
-const categoryOrder = ['Information', 'Music', 'Favourite', 'Config', 'Moderation', 'Automod', 'Voice', 'Utility', 'Giveaway', 'Filters', 'Tracker'];
+const categoryOrder = ['Information', 'Music', 'Favourite', 'Config', 'Moderation', 'Automod', 'Voice', 'Utility', 'Filters', 'Tracker'];
 
 module.exports = {
     name: 'help',

@@ -170,21 +170,6 @@ const tables = [
         `
     },
     {
-        name: 'giveaways',
-        schema: `
-            messageId TEXT PRIMARY KEY,
-            guildId TEXT,
-            channelId TEXT,
-            hostId TEXT,
-            prize TEXT,
-            winnerCount INTEGER,
-            endTime INTEGER,
-            ended INTEGER DEFAULT 0,
-            participants TEXT DEFAULT '[]',
-            createdAt INTEGER
-        `
-    },
-    {
         name: 'invite_logs',
         schema: `
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -280,8 +265,6 @@ const indexes = [
     'CREATE INDEX IF NOT EXISTS idx_invitetracking_guildId ON invitetracking(guildId)',
     'CREATE INDEX IF NOT EXISTS idx_invite_logs_guildId ON invite_logs(guildId)',
     'CREATE INDEX IF NOT EXISTS idx_invite_logs_userId ON invite_logs(userId)',
-    'CREATE INDEX IF NOT EXISTS idx_giveaways_guildId ON giveaways(guildId)',
-    'CREATE INDEX IF NOT EXISTS idx_giveaways_ended ON giveaways(ended)',
     'CREATE INDEX IF NOT EXISTS idx_invites_guildId_userId ON invites(guildId, userId)'
 ];
 
@@ -660,86 +643,6 @@ managers.invites = {
         }
     }
 };
-managers.giveaways = {
-    get: (messageId) => {
-        const row = db.prepare('SELECT * FROM giveaways WHERE messageId = ?').get(messageId);
-        if (!row) return null;
-        return { ...row, participants: deserialize(row.participants) };
-    },
-    set: (messageId, data) => {
-        const updates = [];
-        const params = [];
-        for (const key in data) {
-            if (key === 'messageId') continue;
-            updates.push(`${key} = ?`);
-            let val = data[key];
-            if (typeof val === 'boolean') val = val ? 1 : 0;
-            else if (typeof val === 'object' && val !== null) val = serialize(val);
-            params.push(val);
-        }
-
-        const exists = db.prepare('SELECT 1 FROM giveaways WHERE messageId = ?').get(messageId);
-        if (exists) {
-            params.push(messageId);
-            db.prepare(`UPDATE giveaways SET ${updates.join(', ')} WHERE messageId = ?`).run(...params);
-        } else {
-            const keys = ['messageId', ...Object.keys(data).filter(k => k !== 'messageId')];
-            const vals = keys.map(k => {
-                let v = k === 'messageId' ? messageId : data[k];
-                if (typeof v === 'boolean') v = v ? 1 : 0;
-                else if (typeof v === 'object' && v !== null) v = serialize(v || (k === 'participants' ? [] : {}));
-                return v;
-            });
-            db.prepare(`INSERT INTO giveaways (${keys.join(', ')}) VALUES (${keys.map(() => '?').join(', ')})`).run(...vals);
-        }
-    },
-    getAll: () => {
-        return db.prepare('SELECT * FROM giveaways').all().map(row => ({ ...row, participants: deserialize(row.participants) }));
-    },
-    delete: (messageId) => {
-        db.prepare('DELETE FROM giveaways WHERE messageId = ?').run(messageId);
-    },
-    find: (filter = {}, complex = null) => {
-        let sql = 'SELECT * FROM giveaways';
-        const params = [];
-        const conditions = [];
-        for (const key in filter) {
-            conditions.push(`${key} = ?`);
-            params.push(typeof filter[key] === 'boolean' ? (filter[key] ? 1 : 0) : filter[key]);
-        }
-        if (complex) {
-            conditions.push(complex.condition);
-            if (complex.params) params.push(...complex.params);
-        }
-        if (conditions.length > 0) sql += ' WHERE ' + conditions.join(' AND ');
-        return db.prepare(sql).all(...params).map(row => ({ ...row, participants: deserialize(row.participants) }));
-    },
-    deleteMany: (filter = {}, complex = null) => {
-        let sql = 'DELETE FROM giveaways';
-        const params = [];
-        const conditions = [];
-        for (const key in filter) {
-            conditions.push(`${key} = ?`);
-            params.push(typeof filter[key] === 'boolean' ? (filter[key] ? 1 : 0) : filter[key]);
-        }
-        if (complex) {
-            conditions.push(complex.condition);
-            if (complex.params) params.push(...complex.params);
-        }
-        if (conditions.length > 0) {
-            sql += ' WHERE ' + conditions.join(' AND ');
-            return db.prepare(sql).run(...params);
-        }
-        return { changes: 0 };
-    },
-    getActiveForChannel: (channelId) => {
-        return db.prepare('SELECT * FROM giveaways WHERE channelId = ? AND ended = 0').all(channelId).map(row => ({ ...row, participants: deserialize(row.participants) }));
-    },
-    getEndedForChannel: (channelId) => {
-        return db.prepare('SELECT * FROM giveaways WHERE channelId = ? AND ended = 1').all(channelId).map(row => ({ ...row, participants: deserialize(row.participants) }));
-    }
-};
-
 managers.rankPermissions = {
     get: (rank) => {
         const row = db.prepare('SELECT * FROM rankPermissions WHERE rank = ?').get(rank);

@@ -49,9 +49,6 @@ module.exports = {
 
     web.send({ embeds: [embed] }).catch(() => { });
 
-    const giveawayManager = require("../../utils/giveawayManager");
-    await giveawayManager.syncGiveaways(client, guild);
-
     try {
       if (own && own.user) {
         const recipient = own.user;
