@@ -4,7 +4,7 @@ const { Player } = require('discord-player');
 const { Client, GatewayIntentBits } = require('discord.js');
 const { spawn } = require('child_process');
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates] });
 const player = new Player(client);
 
 (async () => {

@@ -1,5 +1,15 @@
 const { QueryType, useMainPlayer } = require('discord-player');
-const { ApplicationCommandOptionType, EmbedBuilder } = require('discord.js');
+const { 
+    ApplicationCommandOptionType, 
+    ContainerBuilder, 
+    TextDisplayBuilder, 
+    SectionBuilder, 
+    ActionRowBuilder, 
+    ButtonBuilder, 
+    ButtonStyle, 
+    SeparatorBuilder, 
+    MessageFlags 
+} = require('discord.js');
 
 module.exports = {
     name: 'play',
@@ -16,8 +26,8 @@ module.exports = {
 
     async execute({ inter, client }) {
         const player = useMainPlayer();
-        const song   = inter.options.getString('song').trim();
-        const isURL  = /^https?:\/\//i.test(song);
+        const song = inter.options.getString('song').trim();
+        const isURL = /^https?:\/\//i.test(song);
         const isSpotify = /open\.spotify\.com/i.test(song);
         const isYouTube = /youtu(be\.com|\.be)/i.test(song);
 
@@ -70,11 +80,13 @@ module.exports = {
         }
 
         if (!track) {
+            const errorDisplay = new TextDisplayBuilder()
+                .setContent(`**❌ We couldn't find any results for "${song}".**\nPlease try another search term or paste a direct YouTube/Spotify link.`);
+            const container = new ContainerBuilder().addTextDisplayComponents(errorDisplay);
+            
             return inter.editReply({
-                embeds: [new EmbedBuilder()
-                    .setAuthor({ name: '❌  No songs found' })
-                    .setDescription(`We couldn't find any results for **${song}**.\nPlease try another search term or paste a direct YouTube/Spotify link.`)
-                    .setColor('#ED4245')]
+                components: [container],
+                flags: MessageFlags.IsComponentsV2
             });
         }
 
@@ -118,54 +130,143 @@ module.exports = {
                           : track.source === 'apple_music' ? '🍎 Apple Music'
                           : track.source === 'youtube'     ? '🔴 YouTube'
                           : '🎵 Auto';
+            
+            const position = queue.tracks.size;
 
-            if (!wasPlaying) {
-                return inter.editReply({
-                    embeds: [new EmbedBuilder()
-                        .setAuthor({
-                            name: playlist ? `▶️  Starting Playlist: ${playlist.title}` : '▶️  Starting Playback',
-                            iconURL: client.user.displayAvatarURL({ size: 64 })
-                        })
-                        .setThumbnail(track.thumbnail || null)
-                        .setDescription(
-                            `> 🎵  **[${track.title}](${track.url})**\n` +
-                            `> 🎤  by **${track.author}** • \`${track.duration}\`\n` +
-                            (playlist ? `> 📑  **Added ${playlist.tracks.length} tracks**\n` : '') +
-                            `> 📡  Source: ${srcIcon}`
-                        )
-                        .setColor('#57F287')]
+            const titleDisplay = new TextDisplayBuilder()
+                .setContent(`### ✅ ${playlist ? 'Playlist Added' : 'Track Added'}`);
+
+            const truncateTitle = (title, maxLength = 30) => {
+                if (!title) return 'Unknown Title';
+                if (title.length <= maxLength) return title;
+                return title.substring(0, maxLength) + '...';
+            };
+
+            const infoDisplay = new TextDisplayBuilder()
+                .setContent(
+                    `[**${truncateTitle(playlist ? playlist.title : track.title, 35)}**](${playlist ? playlist.url : track.url}) by \` ${track.author} \`\n` +
+                    (playlist ? `-# Tracks \` ${playlist.tracks.length} \` • By \` ${inter.user.username} \`` : `-# Position \` #${position} \` • Duration \` ${track.duration} \` • By \` ${inter.user.username} \``)
+                );
+            
+            const section = new SectionBuilder()
+                .addTextDisplayComponents(titleDisplay, infoDisplay);
+
+            if (track.thumbnail) {
+                section.setThumbnailAccessory((thumbnail) => thumbnail.setURL(track.thumbnail));
+            }
+
+            const container = new ContainerBuilder()
+                .addSectionComponents(section);
+
+            if (position > 0 && !playlist) {
+                const removeButton = new ButtonBuilder()
+                    .setCustomId(`remove_${track.id}_${position}`)
+                    .setLabel('Remove')
+                    .setStyle(ButtonStyle.Danger);
+
+                const playNextButton = new ButtonBuilder()
+                    .setCustomId(`playnext_${track.id}_${position}`)
+                    .setLabel('Play Next')
+                    .setStyle(ButtonStyle.Success)
+                    .setDisabled(position === 1);
+
+                const buttonRow = new ActionRowBuilder()
+                    .addComponents(removeButton, playNextButton);
+
+                container.addSeparatorComponents(new SeparatorBuilder());
+                container.addActionRowComponents(buttonRow);
+            }
+
+            const replyMsg = await inter.editReply({
+                components: [container],
+                flags: MessageFlags.IsComponentsV2
+            });
+
+            if (position > 0 && !playlist && replyMsg) {
+                const collector = replyMsg.createMessageComponentCollector({
+                    filter: (i) => i.user.id === inter.user.id,
+                    time: 300000
+                });
+
+                collector.on('collect', async (buttonInteraction) => {
+                    if (!buttonInteraction.member.voice.channel || buttonInteraction.member.voice.channel.id !== queue.channel.id) {
+                        return buttonInteraction.reply({ content: `**❌ You must be in my voice channel to use this.**`, ephemeral: true });
+                    }
+
+                    const parts = buttonInteraction.customId.split('_');
+                    const action = parts[0];
+                    const trackId = parts[1];
+
+                    if (action === 'remove') {
+                        try {
+                            const trackToRemove = queue.tracks.toArray().find(t => t.id === trackId);
+                            if (trackToRemove) {
+                                queue.removeTrack(trackToRemove);
+                                
+                                const updatedDisplay = new TextDisplayBuilder()
+                                    .setContent(`**✅ Removed [${truncateTitle(trackToRemove.title, 25)}](${trackToRemove.url}) from queue.**`);
+                                const updatedContainer = new ContainerBuilder().addTextDisplayComponents(updatedDisplay);
+                                
+                                await buttonInteraction.deferUpdate().catch(() => {});
+                                await buttonInteraction.message.edit({
+                                    components: [updatedContainer],
+                                    flags: MessageFlags.IsComponentsV2
+                                }).catch(() => {});
+                                buttonInteraction.message.actionTaken = true;
+                            } else {
+                                await buttonInteraction.reply({ content: `**❌ This track is no longer in the queue.**`, ephemeral: true });
+                            }
+                        } catch (err) {
+                            console.error('Error removing track:', err);
+                        }
+                    } else if (action === 'playnext') {
+                        try {
+                            const trackToMoveIndex = queue.tracks.toArray().findIndex(t => t.id === trackId);
+                            if (trackToMoveIndex !== -1) {
+                                const trackToMove = queue.tracks.toArray()[trackToMoveIndex];
+                                queue.node.move(trackToMove, 0);
+                                
+                                const updatedDisplay = new TextDisplayBuilder()
+                                    .setContent(`**✅ Moved [${truncateTitle(trackToMove.title, 25)}](${trackToMove.url}) to next in queue.**`);
+                                const updatedContainer = new ContainerBuilder().addTextDisplayComponents(updatedDisplay);
+                                
+                                await buttonInteraction.deferUpdate().catch(() => {});
+                                await buttonInteraction.message.edit({
+                                    components: [updatedContainer],
+                                    flags: MessageFlags.IsComponentsV2
+                                }).catch(() => {});
+                                buttonInteraction.message.actionTaken = true;
+                            } else {
+                                await buttonInteraction.reply({ content: `**❌ This track is no longer in the queue.**`, ephemeral: true });
+                            }
+                        } catch (err) {
+                            console.error('Error moving track:', err);
+                        }
+                    }
+                });
+
+                collector.on('end', () => {
+                    if (replyMsg && !replyMsg.deleted && !replyMsg.actionTaken) {
+                        const finalContainer = new ContainerBuilder().addSectionComponents(section);
+                        replyMsg.edit({
+                            components: [finalContainer],
+                            flags: MessageFlags.IsComponentsV2
+                        }).catch(() => {});
+                    }
                 });
             }
 
-            return inter.editReply({
-                embeds: [new EmbedBuilder()
-                    .setAuthor({
-                        name: playlist ? `✅  Playlist Added to Queue` : '✅  Added to Queue',
-                        iconURL: client.user.displayAvatarURL({ size: 64 })
-                    })
-                    .setTitle(playlist ? playlist.title : (track.title.length > 256 ? track.title.substring(0, 253) + '...' : track.title))
-                    .setURL(playlist ? playlist.url : track.url)
-                    .setThumbnail(track.thumbnail || null)
-                    .setDescription(
-                        (playlist ? `> 📑  **Tracks:** ${playlist.tracks.length}\n` : `> 👤  **Artist:** ${track.author}\n> ⏱  **Duration:** \`${track.duration}\`\n`) +
-                        `> 🔄  **Autoplay:** ${autoplayEnabled ? '✅ On' : '❌ Off'}\n` +
-                        `> 📋  **Position:** #${queue.tracks.size}`
-                    )
-                    .setColor('#57F287')
-                    .setFooter({
-                        text: `Requested by ${inter.member.displayName} • ${srcIcon}`,
-                        iconURL: inter.member.displayAvatarURL()
-                    })
-                    .setTimestamp()]
-            });
+            return;
 
         } catch (error) {
             console.error('[Play Error]', error);
+            const errorDisplay = new TextDisplayBuilder()
+                .setContent(`**❌ Playback failed — please try again**\n\`${error.message.substring(0, 200)}\``);
+            const container = new ContainerBuilder().addTextDisplayComponents(errorDisplay);
+            
             return inter.editReply({
-                embeds: [new EmbedBuilder()
-                    .setAuthor({ name: '❌  Playback failed — please try again' })
-                    .setDescription(`\`${error.message.substring(0, 200)}${error.message.length > 200 ? '...' : ''}\``)
-                    .setColor('#ED4245')]
+                components: [container],
+                flags: MessageFlags.IsComponentsV2
             });
         }
     }
