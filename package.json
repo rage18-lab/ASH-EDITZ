@@ -16,7 +16,7 @@
     "better-sqlite3": "^12.6.2",
     "canvacard": "^6.0.5",
     "canvafy": "^7.2.1",
-    "canvas": "^3.1.2",
+    "canvas": "npm:@napi-rs/canvas@^1.0.3",
     "delay": "^6.0.0",
     "discord-api-types": "^0.38.37",
     "discord-hybrid-sharding": "^2.2.6",
@@ -36,7 +36,6 @@
     "undici": "latest"
   },
   "allowScripts": {
-    "better-sqlite3@12.8.0": true,
-    "canvas@3.2.3": true
+    "better-sqlite3@12.8.0": true
   }
 }
