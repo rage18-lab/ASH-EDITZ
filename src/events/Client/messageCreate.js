@@ -36,9 +36,10 @@ module.exports = {
 
       const greetDisplay = new TextDisplayBuilder()
         .setContent(
-          `**${client.emoji.check} Hey ${message.author}!**\n` +
-          `**${client.emoji.info} My prefix for this server is  **\`${prefix}\`\n\n` +
-          `**${client.emoji.info} Type \`${prefix}help\` for a list of commands.**`
+          `### 🎵 Hello there, ${message.author.username}!\n\n` +
+          `**${client.emoji.info} My prefix for this server is  **\`${prefix}\`\n` +
+          `**${client.emoji.info} Type \`${prefix}help\` or \`/help\` for a list of commands.**\n` +
+          `**${client.emoji.check} Need help? Join our support server!**`
         );
 
       const container = new ContainerBuilder()
@@ -49,6 +50,20 @@ module.exports = {
         flags: MessageFlags.IsComponentsV2
       }).catch(() => null);
       return;
+    }
+
+    const isOwnerMentioned = client.config.ownerID.some(id => message.mentions.users.has(id));
+    if (isOwnerMentioned && !message.mentions.everyone && message.type !== 19 && !client.config.ownerID.includes(message.author.id)) {
+      const ownerGreet = new TextDisplayBuilder()
+        .setContent(`**${client.emoji.warn} Hey! Please do not ping my developer(s). They will get back to you if needed.**`);
+
+      const container = new ContainerBuilder()
+        .addTextDisplayComponents(ownerGreet);
+
+      await message.channel.send({
+        components: [container],
+        flags: MessageFlags.IsComponentsV2
+      }).catch(() => null);
     }
 
     const hasNoPrefix = client.db.noprefix.getGlobal(message.author.id);

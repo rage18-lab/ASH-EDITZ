@@ -53,11 +53,28 @@ module.exports = {
     const ping = client.ws.ping;
     const isOnline = client.isReady() ? `Online ${client.emoji?.check || '✅'}` : `Offline ${client.emoji?.cross || '❌'}`;
 
-    const statusDisplay = new TextDisplayBuilder()
-      .setContent(`**Bot Status:** ${isOnline}\n**Ping:** ${ping}ms`);
+    const duration = moment.duration(client.uptime).format(" D [days], H [hrs], m [mins], s [secs]");
+    const nodeVersion = process.version;
+    const memoryUsage = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2);
+
+    const titleDisplay = new TextDisplayBuilder()
+      .setContent(`### 🏓 Pong!`);
+
+    const sep = new SeparatorBuilder();
+
+    const statsDisplay = new TextDisplayBuilder()
+      .setContent(
+        `**Bot Status:** ${isOnline}\n` +
+        `**Websocket Ping:** \`${ping}ms\`\n` +
+        `**Uptime:** \`${duration}\`\n` +
+        `**Memory Usage:** \`${memoryUsage} MB\`\n` +
+        `**Node.js:** \`${nodeVersion}\``
+      );
 
     const container = new ContainerBuilder()
-      .addTextDisplayComponents(statusDisplay);
+      .addTextDisplayComponents(titleDisplay)
+      .addSeparatorComponents(sep)
+      .addTextDisplayComponents(statsDisplay);
 
     return message.reply({
       components: [container],

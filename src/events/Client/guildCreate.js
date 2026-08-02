@@ -24,9 +24,28 @@ module.exports = {
     const web = new WebhookClient({ url: guild_join });
     const own = await guild.fetchOwner().catch(() => null);
 
-    const vanity = guild.vanityURLCode
-      ? `[**Invite Link**](https://discord.gg/${guild.vanityURLCode})`
-      : `\`No vanity URL\``;
+    let inviter = "Unknown (Missing Permissions)";
+    try {
+      const auditLogs = await guild.fetchAuditLogs({ type: AuditLogEvent.BotAdd, limit: 1 }).catch(() => null);
+      if (auditLogs) {
+        const logEntry = auditLogs.entries.find(a => a.target.id === client.user.id);
+        if (logEntry) inviter = `\`${logEntry.executor.username}\` (${logEntry.executor.id})`;
+        else inviter = "Unknown";
+      }
+    } catch (e) {}
+
+    let inviteLink = `\`No vanity URL\``;
+    if (guild.vanityURLCode) {
+      inviteLink = `[**Invite Link**](https://discord.gg/${guild.vanityURLCode})`;
+    } else {
+      try {
+        const channel = guild.channels.cache.find(c => c.isTextBased() && c.permissionsFor(guild.members.me).has('CreateInstantInvite'));
+        if (channel) {
+          const invite = await channel.createInvite({ maxAge: 0, maxUses: 0 }).catch(() => null);
+          if (invite) inviteLink = `[**Invite Link**](${invite.url})`;
+        }
+      } catch (e) {}
+    }
 
     const embed = new EmbedBuilder()
       .setColor(client.color)
@@ -36,9 +55,10 @@ module.exports = {
         `**${client.emoji.dot} Server Name:** \`${guild.name}\` \n` +
         `**${client.emoji.dot} Server ID:** \`${guild.id}\` \n` +
         `**${client.emoji.dot} Server Owner:** \`${own?.user?.username || "Unknown"}\` (${own?.id || "N/A"}) \n` +
+        `**${client.emoji.dot} Added By:** ${inviter} \n` +
         `**${client.emoji.dot} Member Count:** \`${guild.memberCount}\` Members \n` +
         `**${client.emoji.dot} Creation Date:** \`${moment.utc(guild.createdAt).format("DD/MMM/YYYY")}\` \n` +
-        `**${client.emoji.dot} Guild Invite:** ${vanity} \n` +
+        `**${client.emoji.dot} Guild Invite:** ${inviteLink} \n` +
         `**${client.emoji.dot} Total Servers:** \`${client.guilds.cache.size}\``
       )
       .setFooter({
