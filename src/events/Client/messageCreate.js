@@ -1,4 +1,4 @@
-﻿const {
+const {
   PermissionsBitField,
   WebhookClient,
   EmbedBuilder,
@@ -15,11 +15,6 @@ module.exports = {
   run: async (client, message) => {
     if (message.author.bot || !message.guild) return;
 
-    try {
-      if (client.automod) client.automod.handleMessage(message);
-    } catch (err) {
-      console.error(`[AutoMod Error] ${err.message}`);
-    }
 
     const isIgnored = client.db.ignorechannels.get(message.guild.id, message.channel.id);
     if (isIgnored) {

@@ -148,65 +148,6 @@ const tables = [
             messageId TEXT,
             guildId TEXT
         `
-    },
-    {
-        name: 'invitetracking',
-        schema: `
-            guildId TEXT PRIMARY KEY,
-            enabled INTEGER DEFAULT 0,
-            channelId TEXT
-        `
-    },
-    {
-        name: 'invites',
-        schema: `
-            guildId TEXT,
-            userId TEXT,
-            invites INTEGER DEFAULT 0,
-            fake INTEGER DEFAULT 0,
-            leaves INTEGER DEFAULT 0,
-            bonus INTEGER DEFAULT 0,
-            PRIMARY KEY (guildId, userId)
-        `
-    },
-    {
-        name: 'invite_logs',
-        schema: `
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            guildId TEXT,
-            userId TEXT,
-            inviterId TEXT,
-            inviteCode TEXT,
-            joinedAt TEXT,
-            leftAt TEXT,
-            isLeft INTEGER DEFAULT 0,
-            isFake INTEGER DEFAULT 0,
-            isRejoin INTEGER DEFAULT 0,
-            cleared INTEGER DEFAULT 0,
-            clearedAt TEXT
-        `
-    },
-    {
-        name: 'automod',
-        schema: `
-            guildId TEXT PRIMARY KEY,
-            antiLink INTEGER DEFAULT 0,
-            antiInvite INTEGER DEFAULT 0,
-            antiSpam INTEGER DEFAULT 0,
-            antiMention INTEGER DEFAULT 0,
-            antiCaps INTEGER DEFAULT 0,
-            antiEmoji INTEGER DEFAULT 0,
-            antiNsfw INTEGER DEFAULT 0,
-            maxMentions INTEGER DEFAULT 5,
-            maxEmoji INTEGER DEFAULT 10,
-            whitelistRoles TEXT DEFAULT '[]',
-            whitelistChannels TEXT DEFAULT '[]',
-            whitelistUsers TEXT DEFAULT '[]',
-            logChannel TEXT,
-            action TEXT DEFAULT 'delete',
-            heatSettings TEXT DEFAULT '{}',
-            punishments TEXT DEFAULT '{}'
-        `
     }
 ];
 
@@ -232,20 +173,6 @@ tables.forEach(table => {
             db.prepare('ALTER TABLE reboot ADD COLUMN guildId TEXT').run();
         }
     }
-
-    if (table.name === 'automod') {
-        const columns = db.prepare('PRAGMA table_info(automod)').all();
-        const columnNames = columns.map(c => c.name);
-        if (!columnNames.includes('punishments')) {
-            db.prepare('ALTER TABLE automod ADD COLUMN punishments TEXT DEFAULT "{}"').run();
-        }
-        if (!columnNames.includes('heatSettings')) {
-            db.prepare('ALTER TABLE automod ADD COLUMN heatSettings TEXT DEFAULT "{}"').run();
-        }
-        if (!columnNames.includes('maxEmoji')) {
-            db.prepare('ALTER TABLE automod ADD COLUMN maxEmoji INTEGER DEFAULT 10').run();
-        }
-    }
 });
 
 
@@ -261,11 +188,7 @@ const indexes = [
     'CREATE INDEX IF NOT EXISTS idx_twofourseven_guildId ON twofourseven(guildId)',
     'CREATE INDEX IF NOT EXISTS idx_autorole_guildId ON autorole(guildId)',
     'CREATE INDEX IF NOT EXISTS idx_voicerole_guildId ON voicerole(guildId)',
-    'CREATE INDEX IF NOT EXISTS idx_vcstatus_guildId ON vcstatus(guildId)',
-    'CREATE INDEX IF NOT EXISTS idx_invitetracking_guildId ON invitetracking(guildId)',
-    'CREATE INDEX IF NOT EXISTS idx_invite_logs_guildId ON invite_logs(guildId)',
-    'CREATE INDEX IF NOT EXISTS idx_invite_logs_userId ON invite_logs(userId)',
-    'CREATE INDEX IF NOT EXISTS idx_invites_guildId_userId ON invites(guildId, userId)'
+    'CREATE INDEX IF NOT EXISTS idx_vcstatus_guildId ON vcstatus(guildId)'
 ];
 
 indexes.forEach(index => {
@@ -496,153 +419,7 @@ managers.autorole = {
 managers.voicerole = createManager('voicerole', 'guildId');
 managers.vcstatus = createManager('vcstatus', 'guildId');
 managers.reboot = createManager('reboot', 'id');
-managers.invitetracking = {
-    get: (guildId) => {
-        return db.prepare('SELECT * FROM invitetracking WHERE guildId = ?').get(guildId);
-    },
-    set: (guildId, data) => {
-        const updates = [];
-        const params = [];
-        for (const key in data) {
-            updates.push(`${key} = ?`);
-            let val = data[key];
-            if (typeof val === 'boolean') val = val ? 1 : 0;
-            else if (typeof val === 'object' && val !== null) val = serialize(val);
-            params.push(val);
-        }
-        params.push(guildId);
-        const exists = db.prepare('SELECT 1 FROM invitetracking WHERE guildId = ?').get(guildId);
-        if (exists) {
-            db.prepare(`UPDATE invitetracking SET ${updates.join(', ')} WHERE guildId = ?`).run(...params);
-        } else {
-            const keys = ['guildId', ...Object.keys(data)];
-            const vals = [guildId, ...Object.values(data).map(v => {
-                if (typeof v === 'boolean') return v ? 1 : 0;
-                if (typeof v === 'object' && v !== null) return serialize(v);
-                return v;
-            })];
-            db.prepare(`INSERT INTO invitetracking (${keys.join(', ')}) VALUES (${keys.map(() => '?').join(', ')})`).run(...vals);
-        }
-    },
-    delete: (guildId) => {
-        db.prepare('DELETE FROM invitetracking WHERE guildId = ?').run(guildId);
-    }
-};
 
-managers.invite_logs = {
-    get: (guildId, userId) => {
-        return db.prepare('SELECT * FROM invite_logs WHERE guildId = ? AND userId = ? ORDER BY joinedAt DESC LIMIT 1').get(guildId, userId);
-    },
-    find: (filter = {}) => {
-        let sql = 'SELECT * FROM invite_logs';
-        const params = [];
-        const conditions = [];
-        for (const key in filter) {
-            if (key === '$ne') continue;
-            if (typeof filter[key] === 'object' && filter[key] !== null && filter[key].$ne !== undefined) {
-                conditions.push(`${key} != ?`);
-                params.push(filter[key].$ne === true ? 1 : (filter[key].$ne === false ? 0 : filter[key].$ne));
-            } else {
-                conditions.push(`${key} = ?`);
-                params.push(typeof filter[key] === 'boolean' ? (filter[key] ? 1 : 0) : filter[key]);
-            }
-        }
-        if (conditions.length > 0) {
-            sql += ' WHERE ' + conditions.join(' AND ');
-        }
-        return db.prepare(sql).all(...params);
-    },
-    create: (data) => {
-        const keys = Object.keys(data);
-        const vals = Object.values(data).map(v => (typeof v === 'boolean' ? (v ? 1 : 0) : v));
-        db.prepare(`INSERT INTO invite_logs (${keys.join(', ')}) VALUES (${keys.map(() => '?').join(', ')})`).run(...vals);
-    },
-    count: (filter = {}) => {
-        let sql = 'SELECT COUNT(*) as count FROM invite_logs';
-        const params = [];
-        const conditions = [];
-        for (const key in filter) {
-            conditions.push(`${key} = ?`);
-            params.push(typeof filter[key] === 'boolean' ? (filter[key] ? 1 : 0) : filter[key]);
-        }
-        if (conditions.length > 0) {
-            sql += ' WHERE ' + conditions.join(' AND ');
-        }
-        const res = db.prepare(sql).get(...params);
-        return res ? res.count : 0;
-    },
-    deleteMany: (filter) => {
-        let sql = 'DELETE FROM invite_logs';
-        const params = [];
-        const conditions = [];
-        for (const key in filter) {
-            conditions.push(`${key} = ?`);
-            params.push(typeof filter[key] === 'boolean' ? (filter[key] ? 1 : 0) : filter[key]);
-        }
-        if (conditions.length > 0) {
-            sql += ' WHERE ' + conditions.join(' AND ');
-            db.prepare(sql).run(...params);
-        }
-    },
-    updateMany: (filter = {}, data = {}) => {
-        let sql = 'UPDATE invite_logs';
-        const updates = [];
-        const params = [];
-        for (const key in data) {
-            updates.push(`${key} = ?`);
-            params.push(typeof data[key] === 'boolean' ? (data[key] ? 1 : 0) : data[key]);
-        }
-        sql += ' SET ' + updates.join(', ');
-        const conditions = [];
-        for (const key in filter) {
-            conditions.push(`${key} = ?`);
-            params.push(typeof filter[key] === 'boolean' ? (filter[key] ? 1 : 0) : filter[key]);
-        }
-        if (conditions.length > 0) {
-            sql += ' WHERE ' + conditions.join(' AND ');
-        }
-        return db.prepare(sql).run(...params);
-    },
-    update: (guildId, userId, data) => {
-        const updates = [];
-        const params = [];
-        for (const key in data) {
-            updates.push(`${key} = ?`);
-            params.push(typeof data[key] === 'boolean' ? (data[key] ? 1 : 0) : data[key]);
-        }
-        params.push(guildId, userId);
-        db.prepare(`UPDATE invite_logs SET ${updates.join(', ')} WHERE guildId = ? AND userId = ?`).run(...params);
-    }
-};
-managers.invites = {
-    get: (guildId, userId) => {
-        return db.prepare('SELECT * FROM invites WHERE guildId = ? AND userId = ?').get(guildId, userId);
-    },
-    set: (guildId, userId, data) => {
-        const row = db.prepare('SELECT 1 FROM invites WHERE guildId = ? AND userId = ?').get(guildId, userId);
-        if (row) {
-            const updates = [];
-            const params = [];
-            for (const key in data) {
-                updates.push(`${key} = ?`);
-                let val = data[key];
-                if (typeof val === 'boolean') val = val ? 1 : 0;
-                else if (typeof val === 'object' && val !== null) val = serialize(val);
-                params.push(val);
-            }
-            params.push(guildId, userId);
-            db.prepare(`UPDATE invites SET ${updates.join(', ')} WHERE guildId = ? AND userId = ?`).run(...params);
-        } else {
-            const keys = ['guildId', 'userId', ...Object.keys(data)];
-            const vals = [guildId, userId, ...Object.values(data).map(v => {
-                if (typeof v === 'boolean') return v ? 1 : 0;
-                if (typeof v === 'object' && v !== null) return serialize(v);
-                return v;
-            })];
-            db.prepare(`INSERT INTO invites (${keys.join(', ')}) VALUES (${keys.map(() => '?').join(', ')})`).run(...vals);
-        }
-    }
-};
 managers.rankPermissions = {
     get: (rank) => {
         const row = db.prepare('SELECT * FROM rankPermissions WHERE rank = ?').get(rank);
@@ -683,56 +460,6 @@ managers.rankPermissions = {
     }
 };
 
-
-
-managers.automod = {
-    get: (guildId) => {
-        const row = db.prepare('SELECT * FROM automod WHERE guildId = ?').get(guildId);
-        if (!row) return null;
-        return {
-            ...row,
-            antiLink: !!row.antiLink,
-            antiInvite: !!row.antiInvite,
-            antiSpam: !!row.antiSpam,
-            antiMention: !!row.antiMention,
-            antiCaps: !!row.antiCaps,
-            antiEmoji: !!row.antiEmoji,
-            antiNsfw: !!row.antiNsfw,
-            whitelistRoles: deserialize(row.whitelistRoles),
-            whitelistChannels: deserialize(row.whitelistChannels),
-            whitelistUsers: deserialize(row.whitelistUsers),
-            punishments: deserialize(row.punishments, {}),
-            heatSettings: deserialize(row.heatSettings, {})
-        };
-    },
-    set: (guildId, data) => {
-        const updates = [];
-        const params = [];
-        for (const key in data) {
-            if (key === 'guildId') continue;
-            updates.push(`${key} = ?`);
-            let val = data[key];
-            if (['whitelistRoles', 'whitelistChannels', 'whitelistUsers', 'punishments', 'heatSettings'].includes(key)) val = serialize(val);
-            if (typeof val === 'boolean') val = val ? 1 : 0;
-            params.push(val);
-        }
-
-        const exists = db.prepare('SELECT 1 FROM automod WHERE guildId = ?').get(guildId);
-        if (exists) {
-            params.push(guildId);
-            db.prepare(`UPDATE automod SET ${updates.join(', ')} WHERE guildId = ?`).run(...params);
-        } else {
-            const keys = ['guildId', ...Object.keys(data).filter(k => k !== 'guildId')];
-            const vals = keys.map(k => {
-                let v = k === 'guildId' ? guildId : data[k];
-                if (['whitelistRoles', 'whitelistChannels', 'whitelistUsers', 'punishments', 'heatSettings'].includes(k)) v = serialize(v || (k === 'punishments' || k === 'heatSettings' ? {} : []));
-                if (typeof v === 'boolean') v = v ? 1 : 0;
-                return v;
-            });
-            db.prepare(`INSERT INTO automod (${keys.join(', ')}) VALUES (${keys.map(() => '?').join(', ')})`).run(...vals);
-        }
-    }
-};
 
 const Database = { db, ...managers };
 

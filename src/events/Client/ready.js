@@ -27,30 +27,7 @@ module.exports = {
       }
     }
 
-    client.invites = new Map();
-    for (const [guildId, guild] of client.guilds.cache) {
-      try {
-        const trackingEnabled = client.db.invitetracking.get(guildId);
 
-        if (!trackingEnabled || !trackingEnabled.enabled) continue;
-
-        const me = guild.members.me || await guild.members.fetchMe().catch(() => null);
-        if (!me || !me.permissions.has(PermissionFlagsBits.ManageGuild)) continue;
-
-        const invites = await guild.invites.fetch().catch(() => null);
-        if (!invites) continue;
-
-        const inviteCache = new Map();
-        invites.forEach(invite => {
-          inviteCache.set(invite.code, {
-            uses: invite.uses,
-            inviter: invite.inviter
-          });
-        });
-        client.invites.set(guildId, inviteCache);
-      } catch (error) {
-      }
-    }
 
     client.logger.log(
       `Ready on ${client.guilds.cache.size} servers, for a total of ${client.users.cache.size} users`,

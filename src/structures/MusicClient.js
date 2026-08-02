@@ -7,7 +7,6 @@ const { ClusterClient, getInfo } = require("discord-hybrid-sharding");
 const loadPlayerManager = require("../loaders/loadPlayerManager");
 const permissionHandler = require("../events/Client/PremiumChecks");
 const VoiceHealthMonitor = require("../utils/voiceHealthMonitor");
-const AutomodManager = require("../utils/automodManager");
 
 class MusicBot extends Client {
   constructor() {
@@ -46,13 +45,6 @@ class MusicBot extends Client {
     this.db = require("./Database");
     this.logger.log("[DB] Local SQLite Database Initialized", "ready");
 
-    try {
-      this.automod = new AutomodManager(this);
-      this.logger.log("[AutoMod] Static Manager Initialized Successfully", "ready");
-    } catch (err) {
-      this.logger.log(`[AutoMod] Failed to initialize: ${err.message}`, "error");
-      console.error(err);
-    }
 
     try {
       this.voiceHealthMonitor = new VoiceHealthMonitor(this);
