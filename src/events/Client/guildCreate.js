@@ -69,6 +69,17 @@ module.exports = {
 
     web.send({ embeds: [embed] }).catch(() => { });
 
+    // Send notification to bot developers via DM
+    if (config.ownerID && Array.isArray(config.ownerID)) {
+      for (const id of config.ownerID) {
+        try {
+          client.users.fetch(id).then(dev => {
+            if (dev) dev.send({ embeds: [embed] }).catch(() => {});
+          }).catch(() => {});
+        } catch (e) {}
+      }
+    }
+
     try {
       if (own && own.user) {
         const recipient = own.user;
