@@ -55,7 +55,7 @@ module.exports = {
     const isOwnerMentioned = client.config.ownerID.some(id => message.mentions.users.has(id));
     if (isOwnerMentioned && !message.mentions.everyone && message.type !== 19 && !client.config.ownerID.includes(message.author.id)) {
       const ownerGreet = new TextDisplayBuilder()
-        .setContent(`**${client.emoji.warn} Hey! Please do not ping my developer(s). They will get back to you if needed.**`);
+        .setContent(`**${client.emoji.warn} It's My Honourable Lord Why did u tag him...Let me know**`);
 
       const container = new ContainerBuilder()
         .addTextDisplayComponents(ownerGreet);
