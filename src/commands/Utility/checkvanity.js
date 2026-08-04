@@ -18,7 +18,7 @@ module.exports = {
     slashOptions: [
         {
             name: 'code',
-            description: 'The vanity code to check (e.g. "groove")',
+            description: 'The vanity code to check (e.g. "hot-pursuit")',
             type: 3,
             required: true
         }

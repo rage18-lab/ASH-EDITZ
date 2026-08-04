@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "groove",
+  "name": "hot-pursuit",
   "main": "Shard.js",
   "scripts": {
     "start": "node --no-warnings Shard.js",

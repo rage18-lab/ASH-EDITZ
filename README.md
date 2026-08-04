@@ -1,4 +1,8 @@
-# Groove — Discord Music & Utility Bot
+#<br>
+  <h1 align="center">Hot Pursuit — Discord Music & Utility Bot</h1>
+  <p align="center">
+    <a href="https://nodejs.org/en/about/releases/"><img src="https://img.shields.io/badge/Node.js-18.x-green.svg?style=flat&logo=nodedotjs" alt="Node.js version"></a>
+  </p>
 
 > **Originally developed by [not.blaxe](https://discord.com/users/689047015665172569)**
 > This project was leaked by a friend of the developer. Following the leak, **AeroX Development** has open-sourced it with the consent of the original developer.
@@ -7,9 +11,9 @@
 
 ---
 
-## Overview
+## 🌟 Overview
 
-Groove is a feature-rich Discord bot built with discord.js v14, centered around high-quality music playback via Lavalink (Kazagumo/Shoukaku). It also includes moderation, automod, invite tracking, giveaways, and server utilities. Uses hybrid sharding for scalability and SQLite for persistent storage.
+Hot Pursuit is a feature-rich Discord bot built with discord.js v14, centered around high-quality music playback via Lavalink (Kazagumo/Shoukaku). It also includes moderation, automod, invite tracking, giveaways, and server utilities. Uses hybrid sharding for scalability and SQLite for persistent storage.
 
 ---
 
@@ -37,8 +41,8 @@ Groove is a feature-rich Discord bot built with discord.js v14, centered around 
 ## Installation
 
 ```bash
-git clone https://github.com/AeroXDevelopment/groove.git
-cd groove
+git clone https://github.com/AeroXDevelopment/hot-pursuit.git
+cd hot-pursuit
 npm install
 ```
 
