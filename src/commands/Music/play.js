@@ -12,15 +12,6 @@ const {
 } = require("discord.js");
 
 
-// Safely extract a readable message from any thrown value
-function getErrMsg(err) {
-  if (!err) return 'Unknown error';
-  if (typeof err === 'string') return err;
-  if (err instanceof Error) return err.message || err.toString();
-  if (typeof err.message === 'string' && err.message) return err.message;
-  try { return JSON.stringify(err); } catch { return String(err); }
-}
-
 module.exports = {
   name: "play",
   category: "Music",
@@ -191,7 +182,7 @@ module.exports = {
             console.log(`Successfully fixed player for guild ${interaction.guild.id}`);
           } catch (retryError) {
             console.error("Automated fix failed:", retryError);
-            throw new Error(`Voice connection failed: ${getErrMsg(createError)}. Automated fix also failed: ${getErrMsg(retryError)}`);
+            throw new Error(`Voice connection failed: ${createError.message}. Automated fix also failed: ${retryError.message}`);
           }
         }
       } else {
@@ -758,7 +749,7 @@ module.exports = {
               console.log(`[Music] Successfully recreated player for guild ${message.guild.id} after retry.`);
             } catch (retryError) {
               console.error("[Music] Player creation retry error:", retryError);
-              throw new Error(`Voice connection failed after retry: ${getErrMsg(retryError)}`);
+              throw new Error(`Voice connection failed after retry: ${retryError.message}`);
             }
           } else {
             const partialPlayer = client.manager.players.get(message.guild.id);
@@ -772,7 +763,7 @@ module.exports = {
               }
             }
 
-            throw new Error(`Voice connection failed: ${getErrMsg(createError)}`);
+            throw new Error(`Voice connection failed: ${createError.message}`);
           }
         }
       } else {
