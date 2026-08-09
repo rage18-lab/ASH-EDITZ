@@ -43,6 +43,12 @@ module.exports = {
     if (is247Enabled) {
       return;
     }
+
+    // If autoplay is enabled, don't disconnect — playerEnd will add the next track
+    const autoplay = player.data?.get("autoplay");
+    if (autoplay) {
+      return;
+    }
     const vchannel = guild.channels.cache.get(player.voiceId);
 
     if (vchannel) {
@@ -54,6 +60,13 @@ module.exports = {
       const disconnectTimeout = setTimeout(async () => {
         const currentTwoFourSeven = client.db.twofourseven.get(player.guildId);
         if (currentTwoFourSeven) {
+          return;
+        }
+
+        // Re-check autoplay at the time the timeout fires
+        const currentAutoplay = player.data?.get("autoplay");
+        if (currentAutoplay) {
+          player.data.delete("disconnectTimeout");
           return;
         }
 

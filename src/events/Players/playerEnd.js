@@ -1,4 +1,4 @@
-const { EmbedBuilder } = require("discord.js");
+const { EmbedBuilder, ContainerBuilder, TextDisplayBuilder, MessageFlags } = require("discord.js");
 const { updateVoiceChannel } = require("../../utils/voiceConnect");
 
 module.exports = {
@@ -82,8 +82,6 @@ module.exports = {
           console.error("Last.fm error:", err);
         }
 
-        const searchQueries = recommendations.map(r => `${r.author} ${r.title}`);
-
         let engines = ["ytmsearch", "ytsearch", "spsearch", "amsearch", "dzsearch", "jssearch", "gnsearch", "scsearch"];
         try {
           const userId = track.requester?.id || track.requester;
@@ -111,11 +109,12 @@ module.exports = {
         };
 
         let nextTrack = null;
-        if (searchQueries.length > 0) {
+        if (recommendations.length > 0) {
+          const searchQueries = recommendations.map(r => `${r.author} ${r.title}`);
 
           const searchPromises = searchQueries.slice(0, 3).map(query => findTrack(query));
           const results = await Promise.all(searchPromises);
-          nextTrack = results.find(t => t !== null);
+          nextTrack = results.find(t => t !== null) || null;
 
           if (!nextTrack && searchQueries.length > 3) {
             for (let i = 3; i < searchQueries.length; i++) {
@@ -125,11 +124,33 @@ module.exports = {
           }
         }
 
+        // Fallback: search directly by artist name if Last.fm gave no usable results
+        if (!nextTrack) {
+          console.log(`[Autoplay] Last.fm recommendations exhausted, using artist fallback for: ${cleanAuthor}`);
+          nextTrack = await findTrack(`${cleanAuthor} mix`);
+        }
+        if (!nextTrack) {
+          nextTrack = await findTrack(`${cleanAuthor}`);
+        }
+
         if (nextTrack) {
           player.queue.add(nextTrack);
           if (!player.playing && !player.paused) await player.play();
         } else {
-          console.log(`[Autoplay Test] No tracks found for queries: ${searchQueries.join(', ')}`);
+          // Autoplay truly exhausted — notify user and allow disconnect flow to proceed
+          console.log(`[Autoplay] No tracks found, giving up autoplay for guild ${player.guildId}`);
+          const channel = client.channels.cache.get(player.textId);
+          if (channel) {
+            const display = new TextDisplayBuilder()
+              .setContent(`**${client.emoji.info} Autoplay could not find any more similar tracks. Queue has ended.**`);
+            const container = new ContainerBuilder().addTextDisplayComponents(display);
+            channel.send({
+              components: [container],
+              flags: MessageFlags.IsComponentsV2
+            }).catch(() => null);
+          }
+          // Disable autoplay and let the playerEmpty disconnect flow handle cleanup
+          player.data.set("autoplay", false);
         }
       }
     } catch (error) {

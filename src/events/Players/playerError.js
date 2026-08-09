@@ -15,7 +15,7 @@ module.exports = {
 
       switch (type) {
         case 'TrackStuckEvent':
-          if (player.queue.length > 0) {
+          {
             const channel = client.channels.cache.get(player.textId);
             if (channel) {
               const stuckDisplay = new TextDisplayBuilder()
@@ -32,13 +32,13 @@ module.exports = {
                 flags: MessageFlags.IsComponentsV2
               }).catch(() => null);
             }
+            // Always skip — even with an empty queue this triggers playerEnd which handles autoplay
             player.skip();
             return;
           }
-          break;
 
         case 'TrackLoadFailed':
-          if (player.queue.length > 0) {
+          {
             const channel = client.channels.cache.get(player.textId);
             if (channel) {
               const loadFailDisplay = new TextDisplayBuilder()
@@ -55,10 +55,10 @@ module.exports = {
                 flags: MessageFlags.IsComponentsV2
               }).catch(() => null);
             }
+            // Always skip — even with an empty queue this triggers playerEnd which handles autoplay
             player.skip();
             return;
           }
-          break;
 
         default:
           const channel = client.channels.cache.get(player.textId);

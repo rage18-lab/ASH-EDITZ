@@ -105,12 +105,14 @@ module.exports = {
             .catch(() => null);
         }
 
-        if (player.queue.length > 0) {
+        // Always skip — even with an empty queue this triggers playerEnd which handles autoplay
+        try {
           player.skip();
-        } else {
+        } catch (e) {
+          // If skip fails, destroy as last resort
           try {
             await player.destroy();
-          } catch (e) {
+          } catch (destroyErr) {
             if (client.manager.players.has(player.guildId)) {
               client.manager.players.delete(player.guildId);
             }
