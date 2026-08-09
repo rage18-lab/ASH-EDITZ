@@ -2,7 +2,7 @@ const { prefix } = require("../../config.js");
 const { ActivityType, REST, Routes, PermissionFlagsBits } = require("discord.js");
 
 module.exports = {
-  name: "clientReady",
+  name: "ready",
   run: async (client) => {
     client.logger.log(`${client.user.username} is now online.`, "ready");
 
