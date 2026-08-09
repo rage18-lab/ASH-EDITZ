@@ -26,8 +26,8 @@
   },
   "nodes": [
     {
-      "name": "jirayu.net",
-      "url": "lavalink.jirayu.net:443",
+      "name": "millohost",
+      "url": "lava-v4.millohost.my.id:443",
       "auth": "youshallnotpass",
       "secure": true
     }
