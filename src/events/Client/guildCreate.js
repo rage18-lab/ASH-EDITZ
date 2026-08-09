@@ -25,24 +25,35 @@ module.exports = {
     const own = await guild.fetchOwner().catch(() => null);
 
     let inviter = "Unknown (Missing Permissions)";
+    let inviterTag = "Unknown";
     try {
       const auditLogs = await guild.fetchAuditLogs({ type: AuditLogEvent.BotAdd, limit: 1 }).catch(() => null);
       if (auditLogs) {
         const logEntry = auditLogs.entries.find(a => a.target.id === client.user.id);
-        if (logEntry) inviter = `\`${logEntry.executor.username}\` (${logEntry.executor.id})`;
-        else inviter = "Unknown";
+        if (logEntry) {
+          inviter = `\`${logEntry.executor.username}\` (${logEntry.executor.id})`;
+          inviterTag = `${logEntry.executor.username} (${logEntry.executor.id})`;
+        } else {
+          inviter = "Unknown";
+          inviterTag = "Unknown";
+        }
       }
     } catch (e) {}
 
     let inviteLink = `\`No vanity URL\``;
+    let inviteLinkUrl = null;
     if (guild.vanityURLCode) {
       inviteLink = `[**Invite Link**](https://discord.gg/${guild.vanityURLCode})`;
+      inviteLinkUrl = `https://discord.gg/${guild.vanityURLCode}`;
     } else {
       try {
         const channel = guild.channels.cache.find(c => c.isTextBased() && c.permissionsFor(guild.members.me).has('CreateInstantInvite'));
         if (channel) {
           const invite = await channel.createInvite({ maxAge: 0, maxUses: 0 }).catch(() => null);
-          if (invite) inviteLink = `[**Invite Link**](${invite.url})`;
+          if (invite) {
+            inviteLink = `[**Invite Link**](${invite.url})`;
+            inviteLinkUrl = invite.url;
+          }
         }
       } catch (e) {}
     }
@@ -69,17 +80,68 @@ module.exports = {
 
     web.send({ embeds: [embed] }).catch(() => { });
 
-    // Send notification to bot developers via DM
+    // ── Rich DM notification to bot owner(s) ──────────────────────────────
     if (config.ownerID && Array.isArray(config.ownerID)) {
       for (const id of config.ownerID) {
         try {
-          client.users.fetch(id).then(dev => {
-            if (dev) dev.send({ embeds: [embed] }).catch(() => {});
-          }).catch(() => {});
-        } catch (e) {}
+          const dev = await client.users.fetch(id).catch(() => null);
+          if (!dev) continue;
+
+          // Header
+          const headerDisplay = new TextDisplayBuilder()
+            .setContent(`### 🎉 Bot Added to a New Server!`);
+
+          const sep1 = new SeparatorBuilder();
+
+          // Server info block
+          const serverInfo = new TextDisplayBuilder()
+            .setContent(
+              `**🏠 Server Name:** \`${guild.name}\`\n` +
+              `**🆔 Server ID:** \`${guild.id}\`\n` +
+              `**👑 Server Owner:** \`${own?.user?.username || "Unknown"}\` — \`${own?.user?.id || "N/A"}\`\n` +
+              `**➕ Added By:** \`${inviterTag}\`\n` +
+              `**👥 Members:** \`${guild.memberCount.toLocaleString()}\`\n` +
+              `**📅 Server Created:** \`${moment.utc(guild.createdAt).format("DD MMM YYYY")}\`\n` +
+              `**🌐 Server Invite:** ${inviteLinkUrl ? `[Click Here](${inviteLinkUrl})` : "`No invite available`"}\n` +
+              `**📊 Total Servers Now:** \`${client.guilds.cache.size}\``
+            );
+
+          const sep2 = new SeparatorBuilder();
+
+          const footerDisplay = new TextDisplayBuilder()
+            .setContent(`-# ${moment.utc().format("DD MMM YYYY [at] HH:mm")} UTC`);
+
+          const container = new ContainerBuilder()
+            .addTextDisplayComponents(headerDisplay)
+            .addSeparatorComponents(sep1)
+            .addTextDisplayComponents(serverInfo)
+            .addSeparatorComponents(sep2)
+            .addTextDisplayComponents(footerDisplay);
+
+          // Add invite button if available
+          if (inviteLinkUrl) {
+            const inviteBtn = new ButtonBuilder()
+              .setLabel("Join Server")
+              .setStyle(ButtonStyle.Link)
+              .setURL(inviteLinkUrl);
+            const row = new ActionRowBuilder().addComponents(inviteBtn);
+            container.addActionRowComponents(row);
+          }
+
+          await dev.send({
+            components: [container],
+            flags: MessageFlags.IsComponentsV2
+          }).catch((err) => {
+            console.log(`[GuildCreate] Could not DM owner ${id}: ${err.message}`);
+          });
+
+        } catch (e) {
+          console.error(`[GuildCreate] Error sending DM to owner ${id}:`, e);
+        }
       }
     }
 
+    // ── Welcome DM to server owner ─────────────────────────────────────────
     try {
       if (own && own.user) {
         const recipient = own.user;
