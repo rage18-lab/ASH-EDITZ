@@ -546,9 +546,16 @@ module.exports = {
     } catch (error) {
       console.error("Error in slash play command:", error);
 
-      let errorMessage = error.message;
-      if (error.code === 'UND_ERR_CONNECT_TIMEOUT' || error.message.includes('fetch failed')) {
-        errorMessage = "The music server is currently unreachable. Please try again or contact support.";
+      let errorMessage;
+      const isRestError = error.name === 'RestError' || error.constructor?.name === 'RestError' ||
+        (error.message && (error.message.includes('RestError') || error.message.includes('rest error')));
+      const isVoiceRestError = isRestError ||
+        (error.message && error.message.toLowerCase().includes('voice connection failed') && error.message.includes('RestError'));
+
+      if (error.code === 'UND_ERR_CONNECT_TIMEOUT' || (error.message && error.message.includes('fetch failed'))) {
+        errorMessage = "The music server is currently unreachable. Please try again in a moment.";
+      } else if (isVoiceRestError || isRestError) {
+        errorMessage = "The music node is currently unavailable or overloaded. Please try again in a few seconds. If this persists, use `/forcefix`.";
       } else {
         errorMessage = `An error occurred: ${error.message}`;
       }

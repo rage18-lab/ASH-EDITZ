@@ -78,13 +78,17 @@ async function recreatePlayer(client, guildId, voiceId, textId) {
     } catch (error) {
         console.error(`Error recreating player:`, error);
 
+        const isRestError = error.name === 'RestError' || error.constructor?.name === 'RestError' ||
+            (error.message && (error.message.includes('RestError') || error.message.includes('rest error')));
+
         const isFetchError = error.message?.includes('fetch failed') ||
             error.code === 'UND_ERR_HEADERS_TIMEOUT' ||
             error.code === 'UND_ERR_CONNECT_TIMEOUT';
 
-        if (isFetchError) {
-            console.log(`[Music] Fetch error in recreatePlayer, retrying in 2 seconds...`);
-            await new Promise(resolve => setTimeout(resolve, 2000));
+        if (isFetchError || isRestError) {
+            const waitMs = isRestError ? 3000 : 2000;
+            console.log(`[Music] ${isRestError ? 'RestError' : 'Fetch error'} in recreatePlayer, retrying in ${waitMs}ms...`);
+            await new Promise(resolve => setTimeout(resolve, waitMs));
             try {
                 return await client.manager.createPlayer({
                     guildId: guildId,
