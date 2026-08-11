@@ -22,5 +22,10 @@ module.exports = {
     if (client.voiceHealthMonitor) {
       client.voiceHealthMonitor.startMonitoring(player);
     }
+
+    // ── Auto-enable autoplay for every new session ─────────────────────────
+    // Autoplay will kick in once the current track ends, picking the most
+    // popular / most-liked similar tracks via Last.fm recommendations.
+    player.data.set("autoplay", true);
   },
 };

@@ -20,24 +20,30 @@ module.exports = {
 
       if (reason.exception?.cause?.includes("ScriptExtractionException")) {
         if (currentTrack) {
-          const searchQuery = `${currentTrack.title} ${currentTrack.author}`;
-          let searchResult = await client.manager.search(searchQuery, {
-            engine: "ytmsearch",
-            requester: currentTrack.requester,
-          });
+          // Preserve edit-audio descriptors (slowed, reverb, nightcore, sped up, etc.)
+          // in the search query so the correct version is found on alternate sources.
+          const editKeywordMatch = currentTrack.title.match(
+            /\b(slowed|reverb|nightcore|sped\s*up|speed\s*up|lofi|lo-fi|8d|bass\s*boost|pitched)\b/gi
+          );
+          const editSuffix = editKeywordMatch ? ` ${editKeywordMatch.join(" ")}` : "";
+          const baseQuery = `${currentTrack.title} ${currentTrack.author}`;
+          const editQuery = editSuffix
+            ? `${currentTrack.author} ${currentTrack.title.replace(/\s*-\s*Topic\s*$/i, "").trim()}`
+            : baseQuery;
 
-          if (!searchResult.tracks.length) {
-            searchResult = await client.manager.search(searchQuery, {
-              engine: "spsearch",
-              requester: currentTrack.requester,
-            });
-          }
+          const searchEngines = ["ytmsearch", "ytsearch", "spsearch", "scsearch"];
+          let searchResult = { tracks: [] };
 
-          if (!searchResult.tracks.length) {
-            searchResult = await client.manager.search(searchQuery, {
-              engine: "scsearch",
+          for (const engine of searchEngines) {
+            const result = await client.manager.search(editQuery, {
+              engine,
               requester: currentTrack.requester,
-            });
+            }).catch(() => ({ tracks: [] }));
+
+            if (result.tracks.length > 0) {
+              searchResult = result;
+              break;
+            }
           }
 
           if (searchResult.tracks.length > 0) {

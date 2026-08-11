@@ -46,12 +46,14 @@ module.exports = {
         .replace(/\[.*?\]/g, "")
         .trim();
 
-      // Helper: strip noise from titles for duplicate-detection
+      // Helper: strip noise from titles for duplicate-detection.
+      // NOTE: intentionally keep "edit", "slowed", "reverb", "sped", "nightcore"
+      // etc. because those describe genuinely different audio versions of a track.
       const extractCoreName = (title) => {
         let core = title.toLowerCase();
         core = core.replace(/\(.*?\)/g, "").replace(/\[.*?\]/g, "");
         core = core.replace(
-          /official|video|audio|lyric|lyrics|music|song|full|hd|4k|8k|version|remix|edit|remaster/gi,
+          /\b(official|video|lyric|lyrics|music video|full|hd|4k|8k|remaster|remastered)\b/gi,
           ""
         );
         core = core.replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim();
@@ -80,23 +82,17 @@ module.exports = {
         isSimilarTitle(t.title, track.title);
 
       // ── Build ordered recommendation list from Last.fm ─────────────────
-      // Priority order:
-      //   1. Last.fm similar tracks for this song (sorted by match score — highest first)
-      //   2. Last.fm top tracks by the same artist (most popular first)
-      //   3. Top tracks of similar artists
+      // Priority order (popularity-first):
+      //   1. Last.fm top tracks by the same artist  → most-played / most-liked
+      //   2. Last.fm similar tracks (high match score) → relevant variety
+      //   3. Top tracks of similar artists           → broader variety
       let recommendations = []; // [{ title, author }]
 
       try {
         const LastFM = require("../../utils/lastfm");
         const lastfm = new LastFM(client);
 
-        // 1. Similar tracks — keep in Last.fm order (already sorted by match desc)
-        const similar = await lastfm.getSimilarTracks(cleanAuthor, cleanTitle, 15);
-        if (similar.length > 0) {
-          recommendations.push(...similar);
-        }
-
-        // 2. Top tracks by the same artist (popular songs people know)
+        // 1. Top tracks by the same artist first — these are the most popular/liked
         const ownTopTracks = await lastfm.getTopTracks(cleanAuthor, 10);
         for (const t of ownTopTracks) {
           if (!recommendations.some(r => isSimilarTitle(r.title, t.title) && r.author === t.author)) {
@@ -104,18 +100,24 @@ module.exports = {
           }
         }
 
-        // 3. Top tracks from similar artists (for variety)
-        if (recommendations.length < 10) {
-          const similarArtists = await lastfm.getSimilarArtists(cleanAuthor, 5);
-          for (const artist of similarArtists) {
-            const artistTopTracks = await lastfm.getTopTracks(artist, 5);
-            for (const t of artistTopTracks) {
-              if (!recommendations.some(r => isSimilarTitle(r.title, t.title) && r.author === t.author)) {
-                recommendations.push(t);
-              }
-            }
-            if (recommendations.length >= 20) break;
+        // 2. Similar tracks — high match score for relevance & variety
+        const similar = await lastfm.getSimilarTracks(cleanAuthor, cleanTitle, 15);
+        for (const t of similar) {
+          if (!recommendations.some(r => isSimilarTitle(r.title, t.title) && r.author === t.author)) {
+            recommendations.push(t);
           }
+        }
+
+        // 3. Top tracks from similar artists (broader variety)
+        const similarArtists = await lastfm.getSimilarArtists(cleanAuthor, 5);
+        for (const artist of similarArtists) {
+          const artistTopTracks = await lastfm.getTopTracks(artist, 5);
+          for (const t of artistTopTracks) {
+            if (!recommendations.some(r => isSimilarTitle(r.title, t.title) && r.author === t.author)) {
+              recommendations.push(t);
+            }
+          }
+          if (recommendations.length >= 25) break;
         }
       } catch (err) {
         console.error("[Autoplay] Last.fm error:", err.message);
