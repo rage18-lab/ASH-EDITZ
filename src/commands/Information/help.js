@@ -312,6 +312,13 @@ module.exports = {
         });
 
         categoryOptions.unshift({
+            label: 'All Commands',
+            value: 'all',
+            description: 'Browse every command in one place',
+            emoji: parseEmoji('📋')
+        });
+
+        categoryOptions.unshift({
             label: 'Home',
             value: 'home',
             description: 'Go back to homepage',
@@ -363,6 +370,29 @@ module.exports = {
                     components: [helpContainer],
                     flags: MessageFlags.IsComponentsV2
                 });
+                return;
+            }
+
+            if (selectedValue === 'all') {
+                const allCmds = Object.values(categoryData).flat();
+                const allHeader = new TextDisplayBuilder()
+                    .setContent(`### ${client.emoji.check} All Commands [${allCmds.length}]\n-# Requested by ${interaction.user.displayName} • <t:${Math.floor(Date.now() / 1000)}:t>`);
+                const allText = allCmds.length > 0
+                    ? allCmds.map(cmd => `\`${cmd.name}\``).join(' , ')
+                    : 'No commands found';
+                const allDisplay = new TextDisplayBuilder().setContent(allText);
+                let serverPrefix = config.prefix || '.';
+                try { const pd = client.db.prefixes.get(interaction.guild.id); if (pd?.prefix) serverPrefix = pd.prefix; } catch (e) {}
+                const allTip = new TextDisplayBuilder().setContent(`-# Use \`${serverPrefix}help <cmd name>\` to get more details`);
+                const allContainer = new ContainerBuilder()
+                    .addTextDisplayComponents(allHeader)
+                    .addSeparatorComponents(new SeparatorBuilder())
+                    .addTextDisplayComponents(allDisplay)
+                    .addSeparatorComponents(new SeparatorBuilder())
+                    .addTextDisplayComponents(allTip)
+                    .addActionRowComponents(row);
+                lastActiveContainer = allContainer;
+                await i.update({ components: [allContainer], flags: MessageFlags.IsComponentsV2 });
                 return;
             }
 
@@ -624,6 +654,13 @@ module.exports = {
         });
 
         categoryOptions.unshift({
+            label: 'All Commands',
+            value: 'all',
+            description: 'Browse every command in one place',
+            emoji: parseEmoji('📋')
+        });
+
+        categoryOptions.unshift({
             label: 'Home',
             value: 'home',
             description: 'Go back to homepage',
@@ -675,6 +712,29 @@ module.exports = {
                     components: [helpContainer],
                     flags: MessageFlags.IsComponentsV2
                 });
+                return;
+            }
+
+            if (selectedValue === 'all') {
+                const allCmds = Object.values(categoryData).flat();
+                const allHeader = new TextDisplayBuilder()
+                    .setContent(`### ${emoji.check} All Commands [${allCmds.length}]\n-# Requested by ${message.author.displayName} • <t:${Math.floor(Date.now() / 1000)}:t>`);
+                const allText = allCmds.length > 0
+                    ? allCmds.map(cmd => `\`${cmd.name}\``).join(' , ')
+                    : 'No commands found';
+                const allDisplay = new TextDisplayBuilder().setContent(allText);
+                let serverPrefix = config.prefix || '.';
+                try { const pd = client.db.prefixes.get(message.guild.id); if (pd?.prefix) serverPrefix = pd.prefix; } catch (e) {}
+                const allTip = new TextDisplayBuilder().setContent(`-# Use \`${serverPrefix}help <cmd name>\` to get more details`);
+                const allContainer = new ContainerBuilder()
+                    .addTextDisplayComponents(allHeader)
+                    .addSeparatorComponents(new SeparatorBuilder())
+                    .addTextDisplayComponents(allDisplay)
+                    .addSeparatorComponents(new SeparatorBuilder())
+                    .addTextDisplayComponents(allTip)
+                    .addActionRowComponents(row);
+                lastActiveContainer = allContainer;
+                await interaction.update({ components: [allContainer], flags: MessageFlags.IsComponentsV2 });
                 return;
             }
 
