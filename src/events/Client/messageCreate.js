@@ -66,40 +66,6 @@ module.exports = {
       }).catch(() => null);
     }
 
-    // ── Owner Trigger Response ──────────────────────────────────────────────────
-    const ownerTriggerPatterns = [
-      /who\s*(?:is|'?s)\s*(?:the\s*)?owner/i,
-      /who\s*owns\s*(?:this\s*)?(?:bot|server)?/i,
-      /whose\s*bot\s*(?:is\s*this)?/i,
-      /bot\s*(?:ka\s*)?owner\s*(?:kon|kaun|koun|who)/i,
-      /owner\s*(?:of\s*(?:this\s*)?(?:bot|server))?/i,
-    ];
-
-    const isOwnerQuery = ownerTriggerPatterns.some(pattern => pattern.test(message.content));
-    if (isOwnerQuery && !client.config.ownerID.includes(message.author.id)) {
-      const perms = message.channel.permissionsFor(client.user);
-      if (perms && perms.has(PermissionsBitField.Flags.SendMessages)) {
-        const ownerTags = client.config.ownerID.map(id => `<@${id}>`).join(', ');
-        const ownerDisplay = new TextDisplayBuilder()
-          .setContent(
-            `👑 **The owner of this bot is:** ${ownerTags}\n` +
-            `${client.emoji.info} **They are the one who created and manages me. Respect them! 🫡**`
-          );
-
-        const container = new ContainerBuilder()
-          .addTextDisplayComponents(ownerDisplay);
-
-        const reply = await message.channel.send({
-          components: [container],
-          flags: MessageFlags.IsComponentsV2
-        }).catch(() => null);
-
-        if (reply) setTimeout(() => reply.delete().catch(() => {}), 30000);
-      }
-      return;
-    }
-    // ───────────────────────────────────────────────────────────────────────────
-
     const hasNoPrefix = client.db.noprefix.getGlobal(message.author.id);
 
     let usedPrefix = '';
