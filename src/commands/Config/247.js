@@ -124,7 +124,7 @@ module.exports = {
             guildId: message.guild.id,
             voiceId: voiceChannel.id,
             textId: message.channel.id,
-            deaf: true,
+            deaf: false,
             volume: 80
           });
         }
@@ -255,7 +255,7 @@ module.exports = {
                 guildId: message.guild.id,
                 voiceId: currentVoiceChannel.id,
                 textId: message.channel.id,
-                deaf: true,
+                deaf: false,
                 volume: 80
               });
             }

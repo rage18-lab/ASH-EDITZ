@@ -70,7 +70,7 @@ module.exports = {
       voiceId: interaction.member.voice.channel.id,
       textId: interaction.channel.id,
       volume: 100,
-      deaf: true,
+      deaf: false,
       mute: false,
     });
 
@@ -136,7 +136,7 @@ module.exports = {
       voiceId: message.member.voice.channel.id,
       textId: message.channel.id,
       volume: 100,
-      deaf: true,
+      deaf: false,
       mute: false,
     });
 

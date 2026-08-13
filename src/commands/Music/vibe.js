@@ -147,7 +147,7 @@ module.exports = {
           voiceId: channel.id,
           textId: interaction.channelId,
           volume: 80,
-          deaf: true,
+          deaf: false,
         });
       }
 

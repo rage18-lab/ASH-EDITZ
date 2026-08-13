@@ -57,7 +57,7 @@ module.exports = {
                   voiceId: twoFourSeven.voiceId,
                   textId: twoFourSeven.textId,
                   volume: 80,
-                  deaf: true,
+                  deaf: false,
                   mute: false,
                 });
 

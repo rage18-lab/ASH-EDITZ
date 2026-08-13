@@ -56,7 +56,7 @@ module.exports = {
           guildId: data.guildId,
           voiceId: data.voiceId,
           textId: data.textId,
-          deaf: true,
+          deaf: false,
           volume: 80,
         });
 

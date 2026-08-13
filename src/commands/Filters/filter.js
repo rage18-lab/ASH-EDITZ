@@ -1,4 +1,4 @@
-﻿const {
+const {
     ActionRowBuilder,
     StringSelectMenuBuilder,
     MessageFlags,

@@ -178,7 +178,7 @@ module.exports = {
             voiceId: channel.id,
             textId: interaction.channel.id,
             volume: 80,
-            deaf: true,
+            deaf: false,
           });
 
         } catch (createError) {
@@ -728,7 +728,7 @@ module.exports = {
             voiceId: channel.id,
             textId: message.channel.id,
             volume: 80,
-            deaf: true,
+            deaf: false,
           });
 
         } catch (createError) {
@@ -759,7 +759,7 @@ module.exports = {
                 voiceId: channel.id,
                 textId: message.channel.id,
                 volume: 80,
-                deaf: true,
+                deaf: false,
               });
 
               console.log(`[Music] Successfully recreated player for guild ${message.guild.id} after retry.`);
@@ -893,7 +893,7 @@ module.exports = {
             if (connection) {
               connection.rejoin({
                 channelId: channel.id,
-                selfDeaf: true,
+                selfdeaf: false,
                 selfMute: false,
               });
 

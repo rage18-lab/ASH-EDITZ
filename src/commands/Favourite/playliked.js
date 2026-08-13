@@ -106,7 +106,7 @@ module.exports = {
             voiceId: message.member.voice.channel.id,
             textId: message.channel.id,
             volume: 80,
-            deaf: true,
+            deaf: false,
           });
         } catch (createError) {
           console.error('Failed to create player:', createError);
