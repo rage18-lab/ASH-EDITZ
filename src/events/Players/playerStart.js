@@ -1,4 +1,4 @@
-﻿const {
+const {
   WebhookClient,
   ComponentType,
   ActionRowBuilder,
@@ -426,6 +426,16 @@ module.exports = {
       const currentTrack = track || player.queue?.current;
 
       if (currentTrack) {
+        // Track leaderboard stats for the requester
+        try {
+          const requesterId = currentTrack.requester?.id;
+          if (requesterId) {
+            client.db.musicStats.increment(requesterId, currentTrack.title || '');
+          }
+        } catch (statsErr) {
+          console.error('[Stats] Failed to update music stats:', statsErr);
+        }
+
         await handleTrackStart(client, player, currentTrack);
       }
 

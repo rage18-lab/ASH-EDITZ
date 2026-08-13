@@ -148,6 +148,14 @@ const tables = [
             messageId TEXT,
             guildId TEXT
         `
+    },
+    {
+        name: 'music_stats',
+        schema: `
+            userId TEXT PRIMARY KEY,
+            songsPlayed INTEGER DEFAULT 0,
+            lastSong TEXT DEFAULT ''
+        `
     }
 ];
 
@@ -419,6 +427,23 @@ managers.autorole = {
 managers.voicerole = createManager('voicerole', 'guildId');
 managers.vcstatus = createManager('vcstatus', 'guildId');
 managers.reboot = createManager('reboot', 'id');
+
+managers.musicStats = {
+    get: (userId) => {
+        return db.prepare('SELECT * FROM music_stats WHERE userId = ?').get(userId) || { userId, songsPlayed: 0, lastSong: '' };
+    },
+    increment: (userId, songTitle = '') => {
+        const exists = db.prepare('SELECT 1 FROM music_stats WHERE userId = ?').get(userId);
+        if (exists) {
+            db.prepare('UPDATE music_stats SET songsPlayed = songsPlayed + 1, lastSong = ? WHERE userId = ?').run(songTitle, userId);
+        } else {
+            db.prepare('INSERT INTO music_stats (userId, songsPlayed, lastSong) VALUES (?, 1, ?)').run(userId, songTitle);
+        }
+    },
+    getTopUsers: (limit = 10) => {
+        return db.prepare('SELECT * FROM music_stats ORDER BY songsPlayed DESC LIMIT ?').all(limit);
+    }
+};
 
 managers.rankPermissions = {
     get: (rank) => {
