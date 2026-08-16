@@ -21,6 +21,7 @@ module.exports = {
         const regions = [
             { label: "Global", value: "global", description: "International chart-toppers" },
             { label: "English", value: "english", description: "Popular English vibes" },
+            { label: "Tamil", value: "tamil", description: "Kollywood & Tamil hits" },
             { label: "Hindi", value: "hindi", description: "Pure Hindi music" },
             { label: "Bollywood", value: "bollywood", description: "Iconic Indian cinema tracks" },
             { label: "Punjabi", value: "punjabi", description: "Bhangra and Punjabi beats" },
@@ -84,6 +85,7 @@ module.exports = {
                 const tagMap = {
                     global: { chill: "lofi", party: "party", sad: "sad", romance: "romance", keyword: "" },
                     english: { chill: "chill house", party: "pop", sad: "sad pop", romance: "lovesong", keyword: "English" },
+                    tamil: { chill: "tamil melody", party: "kollywood", sad: "tamil sad songs", romance: "tamil love songs", keyword: "Tamil" },
                     hindi: { chill: "hindi", party: "hindi", sad: "hindi sad", romance: "hindi", keyword: "Hindi" },
                     bollywood: { chill: "bollywood chill", party: "bollywood dance", sad: "hindi sad", romance: "bollywood romance", keyword: "Bollywood" },
                     punjabi: { chill: "punjabi", party: "bhangra", sad: "punjabi sad", romance: "punjabi", keyword: "Punjabi" },
