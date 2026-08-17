@@ -30,24 +30,6 @@
       "url": "lavalinkv4.serenetia.com:443",
       "auth": "https://dsc.gg/ajidevserver",
       "secure": true
-    },
-    {
-      "name": "jirayu",
-      "url": "lavalink.jirayu.net:443",
-      "auth": "youshallnotpass",
-      "secure": true
-    },
-    {
-      "name": "millohost",
-      "url": "lava-v4.millohost.my.id:443",
-      "auth": "https://discord.gg/mjS5J2K3ep",
-      "secure": true
-    },
-    {
-      "name": "triniumhost",
-      "url": "lavalink-v4.triniumhost.com:443",
-      "auth": "free",
-      "secure": true
     }
   ],
   "node_options": {

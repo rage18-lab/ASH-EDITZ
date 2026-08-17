@@ -93,23 +93,11 @@ module.exports = {
       }
 
       if (player && !player.destroyed) {
-        if (channel) {
-          const errorDisplay = new TextDisplayBuilder()
-            .setContent(
-              `**${client.emoji.warn} Playback error occurred.**\n` +
-              `**${client.emoji.info} Skipping track...**`
-            );
-
-          const container = new ContainerBuilder()
-            .addTextDisplayComponents(errorDisplay);
-
-          channel
-            .send({
-              components: [container],
-              flags: MessageFlags.IsComponentsV2
-            })
-            .catch(() => null);
-        }
+        // Log silently to console for debugging — no message sent to Discord channel
+        client.logger.log(
+          `Player exception (unhandled type) — silently skipping. Reason: ${JSON.stringify(reason)}`,
+          "warn"
+        );
 
         // Always skip — even with an empty queue this triggers playerEnd which handles autoplay
         try {
