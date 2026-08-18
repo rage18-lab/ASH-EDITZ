@@ -26,8 +26,8 @@
   },
   "nodes": [
     {
-      "name": "jirayu",
-      "url": "lavalink.jirayu.net:443",
+      "name": "serenetia",
+      "url": "lavalinkv4.serenetia.com:443",
       "auth": "youshallnotpass",
       "secure": true
     }
