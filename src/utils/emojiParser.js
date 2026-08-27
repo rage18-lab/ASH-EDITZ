@@ -28,3 +28,4 @@ function parseEmoji(emojiString) {
 }
 
 module.exports = { parseEmoji };
+

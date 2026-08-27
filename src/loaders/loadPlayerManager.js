@@ -148,3 +148,4 @@ module.exports = function loadPlayerManager(client) {
   client.manager = manager;
   return manager;
 };
+

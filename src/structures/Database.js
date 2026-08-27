@@ -489,3 +489,4 @@ managers.rankPermissions = {
 const Database = { db, ...managers };
 
 module.exports = Database;
+

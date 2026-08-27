@@ -30,3 +30,4 @@ function parseBoolean(value) {
 config.parseBoolean = parseBoolean;
 
 module.exports = config;
+

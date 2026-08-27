@@ -13,3 +13,4 @@ module.exports = (client) => {
   });
   client.logger.log(`Lavalink Node Events Loaded: ${totalEvents}`, "event");
 };
+

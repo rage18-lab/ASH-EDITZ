@@ -492,3 +492,4 @@ async function handleTrackStart(client, player, track) {
   }
 }
 module.exports.updateNowPlayingButtons = updateNowPlayingButtons;
+

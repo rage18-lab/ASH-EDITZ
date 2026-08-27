@@ -52,3 +52,4 @@ module.exports = (client) => {
   client.logger.log(`Prefix Commands Loaded: ${totalCommands}`, "cmd");
   client.logger.log(`Slash Commands Loaded: ${client.slashCommands.size}`, "cmd");
 };
+

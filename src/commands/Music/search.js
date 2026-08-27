@@ -82,7 +82,7 @@ module.exports = {
                 voiceId: channel.id,
                 textId: context.channel.id,
                 volume: 80,
-                deaf: false,
+                deaf: true,
             });
         }
 
@@ -446,3 +446,4 @@ module.exports = {
         });
     }
 };
+

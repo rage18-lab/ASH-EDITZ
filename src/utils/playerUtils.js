@@ -67,7 +67,7 @@ async function recreatePlayer(client, guildId, voiceId, textId) {
             voiceId: voiceId,
             textId: textId,
             volume: 80,
-            deaf: false,
+            deaf: true,
         });
 
         if (!newPlayer) {
@@ -95,7 +95,7 @@ async function recreatePlayer(client, guildId, voiceId, textId) {
                     voiceId: voiceId,
                     textId: textId,
                     volume: 80,
-                    deaf: false,
+                    deaf: true,
                 });
             } catch (retryError) {
                 console.error(`[Music] Retry in recreatePlayer failed:`, retryError);
@@ -128,3 +128,4 @@ async function forceCleanup(client, guildId) {
 }
 
 module.exports = { safeDestroyPlayer, handleSessionError, recreatePlayer, forceCleanup };
+

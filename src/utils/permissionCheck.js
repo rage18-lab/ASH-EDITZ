@@ -39,3 +39,4 @@ async function checkBotRank(userId, requiredRank, client, commandName = null) {
 }
 
 module.exports = { checkBotRank };
+

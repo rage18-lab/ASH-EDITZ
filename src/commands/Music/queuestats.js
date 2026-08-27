@@ -135,3 +135,4 @@ function truncate(str, max) {
   if (!str) return "Unknown";
   return str.length <= max ? str : str.substring(0, max) + "...";
 }
+

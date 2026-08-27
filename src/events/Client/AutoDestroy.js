@@ -57,7 +57,7 @@ module.exports = {
                   voiceId: twoFourSeven.voiceId,
                   textId: twoFourSeven.textId,
                   volume: 80,
-                  deaf: false,
+                  deaf: true,
                   mute: false,
                 });
 
@@ -311,3 +311,4 @@ module.exports = {
     }
   },
 };
+

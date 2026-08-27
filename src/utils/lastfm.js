@@ -143,3 +143,4 @@ class LastFM {
 }
 
 module.exports = LastFM;
+

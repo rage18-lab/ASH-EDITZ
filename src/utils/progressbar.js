@@ -26,3 +26,4 @@ module.exports = {
     return `${bar[0]}`;
   },
 };
+

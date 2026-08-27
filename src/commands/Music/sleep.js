@@ -282,3 +282,4 @@ function parseDuration(input) {
 
     return null;
 }
+

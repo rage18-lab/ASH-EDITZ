@@ -10,3 +10,4 @@ module.exports = {
     client.logger.log(`Lavalink ${name}: Disconnected`, "warn");
   },
 };
+

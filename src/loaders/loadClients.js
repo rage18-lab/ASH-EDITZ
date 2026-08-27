@@ -13,3 +13,4 @@ module.exports = (client) => {
 
   client.logger.log(`Client Events Loaded: ${totalEvents}`, "event");
 };
+

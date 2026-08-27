@@ -598,3 +598,4 @@ async function showLiveSyncLyrics(client, message, track, syncedLines, player, s
     });
 }
 
+

@@ -29,3 +29,4 @@ module.exports = {
     player.data.set("autoplay", true);
   },
 };
+

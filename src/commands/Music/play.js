@@ -178,7 +178,7 @@ module.exports = {
             voiceId: channel.id,
             textId: interaction.channel.id,
             volume: 80,
-            deaf: false,
+            deaf: true,
           });
 
         } catch (createError) {
@@ -728,7 +728,7 @@ module.exports = {
             voiceId: channel.id,
             textId: message.channel.id,
             volume: 80,
-            deaf: false,
+            deaf: true,
           });
 
         } catch (createError) {
@@ -759,7 +759,7 @@ module.exports = {
                 voiceId: channel.id,
                 textId: message.channel.id,
                 volume: 80,
-                deaf: false,
+                deaf: true,
               });
 
               console.log(`[Music] Successfully recreated player for guild ${message.guild.id} after retry.`);
@@ -893,7 +893,7 @@ module.exports = {
             if (connection) {
               connection.rejoin({
                 channelId: channel.id,
-                selfdeaf: false,
+                selfdeaf: true,
                 selfMute: false,
               });
 
@@ -1280,3 +1280,4 @@ function cleanAuthorName(author, maxLength = 25) {
   const cleaned = author.replace(/\s*-\s*Topic\s*$/i, '').trim();
   return cleaned.length > maxLength ? cleaned.substring(0, maxLength) + '...' : cleaned;
 }
+

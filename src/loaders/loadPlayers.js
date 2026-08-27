@@ -55,3 +55,4 @@ module.exports = (client) => {
     client.logger.log(`Error loading player events: ${error.message}`, "error");
   }
 };
+

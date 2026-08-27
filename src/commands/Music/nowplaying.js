@@ -177,3 +177,4 @@ function cleanAuthorName(author) {
   return author.replace(/\s*-\s*Topic\s*$/i, '').trim();
 }
 
+

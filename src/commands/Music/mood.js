@@ -139,7 +139,7 @@ module.exports = {
                     voiceId: channel.id,
                     textId: message.channel.id,
                     volume: 80,
-                    deaf: false,
+                    deaf: true,
                 });
             }
 
@@ -186,3 +186,4 @@ module.exports = {
         }
     }
 };
+

@@ -85,7 +85,7 @@ module.exports = {
                     voiceId: channel.id,
                     textId: message.channel.id,
                     volume: 100,
-                    deaf: false,
+                    deaf: true,
                     mute: false,
                 });
 
@@ -171,4 +171,5 @@ module.exports = {
         }
     },
 };
+
 

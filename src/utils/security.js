@@ -26,3 +26,4 @@ function loadEncryptedFile(filePath, key, iv) {
 }
 
 module.exports = { encryptFile, loadEncryptedFile };
+

@@ -56,7 +56,7 @@ module.exports = {
           guildId: data.guildId,
           voiceId: data.voiceId,
           textId: data.textId,
-          deaf: false,
+          deaf: true,
           volume: 80,
         });
 
@@ -99,3 +99,4 @@ module.exports = {
     }
   },
 };
+
