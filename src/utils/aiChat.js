@@ -5,12 +5,12 @@ const userHistory = new Map();
 
 const MAX_HISTORY = 10;
 
-// Model priority list — tries each in order if one fails
+// Model priority list — only models confirmed available on this key
 const MODELS = [
-  "llama-3.3-70b-versatile",
-  "llama-3.1-70b-versatile",
-  "mixtral-8x7b-32768",
-  "llama3-8b-8192",
+  "groq/compound",
+  "openai/gpt-oss-120b",
+  "openai/gpt-oss-20b",
+  "qwen/qwen3.8-27b",
 ];
 
 const SYSTEM_PROMPT = {
