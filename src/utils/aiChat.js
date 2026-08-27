@@ -4,14 +4,14 @@ const Groq = require("groq-sdk");
 const userHistory = new Map();
 const MAX_HISTORY = 10;
 
-// Models ordered by preference — confirmed working on this key
-// qwen first: gives short, clean Discord-friendly replies
-// groq/compound last: tends to produce very long reasoning blocks
+// Valid Groq-hosted model IDs — ordered by quality/reliability
+// See: https://console.groq.com/docs/models
 const MODELS = [
-  "qwen/qwen3.8-27b",
-  "qwen/qwen3.6-27b",
-  "openai/gpt-oss-20b",
-  "groq/compound",
+  "llama-3.3-70b-versatile",      // Best overall free Groq model
+  "llama3-70b-8192",               // Reliable fallback
+  "llama3-8b-8192",                // Fast & lightweight fallback
+  "gemma2-9b-it",                  // Google Gemma fallback
+  "mixtral-8x7b-32768",            // Mixtral as last resort
 ];
 
 const SYSTEM_PROMPT = {
