@@ -27,71 +27,31 @@ module.exports = {
     const prefixData = client.db.prefixes.get(message.guild.id);
     if (prefixData?.prefix) prefix = prefixData.prefix;
 
-    // ── AI Chat via @mention ────────────────────────────────────────────────────
+    // ── @mention → show prefix greeting ────────────────────────────────────────
     const mentionRegex = new RegExp(`^<@!?${client.user.id}>`);
     if (mentionRegex.test(message.content)) {
       const perms = message.channel.permissionsFor(client.user);
       if (!perms || !perms.has(PermissionsBitField.Flags.SendMessages)) return;
 
-      // Strip the mention and any leading whitespace to get the actual query
-      const query = message.content.replace(mentionRegex, "").trim();
+      const greetDisplay = new TextDisplayBuilder()
+        .setContent(
+          `### 🎵 Hello there, ${message.author.username}!\n\n` +
+          `**${client.emoji.info} My prefix for this server is  **\`${prefix}\`\n` +
+          `**${client.emoji.info} Type \`${prefix}help\` or \`/help\` for a list of commands.**\n` +
+          `**${client.emoji.check} Need help? Join our support server!**`
+        );
 
-      // Bare ping with no text → show prefix greeting
-      if (!query) {
-        const greetDisplay = new TextDisplayBuilder()
-          .setContent(
-            `### 🎵 Hello there, ${message.author.username}!\n\n` +
-            `**${client.emoji.info} My prefix for this server is  **\`${prefix}\`\n` +
-            `**${client.emoji.info} Type \`${prefix}help\` or \`/help\` for a list of commands.**\n` +
-            `**${client.emoji.check} Need help? Join our support server!**\n` +
-            `**${client.emoji.info} You can also chat with me by mentioning me with a question! 🤖**`
-          );
+      const container = new ContainerBuilder()
+        .addTextDisplayComponents(greetDisplay);
 
-        const container = new ContainerBuilder()
-          .addTextDisplayComponents(greetDisplay);
-
-        await message.channel.send({
-          components: [container],
-          flags: MessageFlags.IsComponentsV2
-        }).catch(() => null);
-        return;
-      }
-
-      // @mention + text → AI chat
-      try {
-        await message.channel.sendTyping().catch(() => null);
-
-        const { askAI } = require("../../utils/aiChat");
-        const aiReply = await askAI(message.author.id, query);
-
-        if (!aiReply || !aiReply.trim()) {
-          await message.reply({ content: "🤔 Hmm, I couldn't think of a response. Try again!" }).catch(() => null);
-          return;
-        }
-
-        // Discord 2000-char limit — split into chunks if needed
-        if (aiReply.length <= 2000) {
-          await message.reply({ content: aiReply }).catch(() => null);
-        } else {
-          const chunks = aiReply.match(/[\s\S]{1,1990}/g) || [];
-          for (const chunk of chunks) {
-            await message.channel.send({ content: chunk }).catch(() => null);
-          }
-        }
-      } catch (err) {
-        console.error("[AI Chat] Error details:", err?.status, err?.message, err?.stack);
-        const errDisplay = new TextDisplayBuilder()
-          .setContent(`**${client.emoji.warn} AI is unavailable right now. Please try again later!**`);
-        const container = new ContainerBuilder()
-          .addTextDisplayComponents(errDisplay);
-        await message.channel.send({
-          components: [container],
-          flags: MessageFlags.IsComponentsV2
-        }).catch(() => null);
-      }
+      await message.channel.send({
+        components: [container],
+        flags: MessageFlags.IsComponentsV2
+      }).catch(() => null);
       return;
     }
     // ───────────────────────────────────────────────────────────────────────────
+
 
     const isOwnerMentioned = client.config.ownerID.some(id => message.mentions.users.has(id));
     if (isOwnerMentioned && !message.mentions.everyone && message.type !== 19 && !client.config.ownerID.includes(message.author.id)) {
