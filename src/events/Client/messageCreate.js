@@ -64,18 +64,22 @@ module.exports = {
         const { askAI } = require("../../utils/aiChat");
         const aiReply = await askAI(message.author.id, query);
 
-        // Discord has a 2000-char limit; split if needed
+        if (!aiReply || !aiReply.trim()) {
+          await message.reply({ content: "🤔 Hmm, I couldn't think of a response. Try again!" }).catch(() => null);
+          return;
+        }
+
+        // Discord 2000-char limit — split into chunks if needed
         if (aiReply.length <= 2000) {
           await message.reply({ content: aiReply }).catch(() => null);
         } else {
-          // Send in chunks
-          const chunks = aiReply.match(/[\s\S]{1,2000}/g) || [];
+          const chunks = aiReply.match(/[\s\S]{1,1990}/g) || [];
           for (const chunk of chunks) {
             await message.channel.send({ content: chunk }).catch(() => null);
           }
         }
       } catch (err) {
-        console.error("[AI Chat] Error:", err);
+        console.error("[AI Chat] Error details:", err?.status, err?.message, err?.stack);
         const errDisplay = new TextDisplayBuilder()
           .setContent(`**${client.emoji.warn} AI is unavailable right now. Please try again later!**`);
         const container = new ContainerBuilder()
