@@ -1,11 +1,17 @@
 const Groq = require("groq-sdk");
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
 // Per-user conversation history: Map<userId, Array<{role, content}>>
 const userHistory = new Map();
 
-const MAX_HISTORY = 10; // messages per user (not counting system prompt)
+const MAX_HISTORY = 10;
+
+// Model priority list — tries each in order if one fails
+const MODELS = [
+  "llama-3.3-70b-versatile",
+  "llama-3.1-70b-versatile",
+  "mixtral-8x7b-32768",
+  "llama3-8b-8192",
+];
 
 const SYSTEM_PROMPT = {
   role: "system",
@@ -16,6 +22,17 @@ const SYSTEM_PROMPT = {
     "Use emojis occasionally to keep things fun. " +
     "If asked about music, songs, or artists, give thoughtful and engaging answers.",
 };
+
+// Lazy Groq client — initialised on first use so env vars are guaranteed to be loaded
+let _groq = null;
+function getGroq() {
+  if (!_groq) {
+    const key = process.env.GROQ_API_KEY;
+    if (!key) throw new Error("GROQ_API_KEY is not set in environment variables.");
+    _groq = new Groq({ apiKey: key });
+  }
+  return _groq;
+}
 
 /**
  * Get or initialise history for a user.
@@ -36,10 +53,40 @@ function getHistory(userId) {
 function trimHistory(userId) {
   const history = userHistory.get(userId);
   if (history && history.length > MAX_HISTORY) {
-    // Remove oldest pairs (user + assistant) from the front
     const excess = history.length - MAX_HISTORY;
     history.splice(0, excess);
   }
+}
+
+/**
+ * Try Groq with each model in the priority list until one succeeds.
+ * @param {Array} messages
+ * @returns {Promise<string>}
+ */
+async function tryGroq(messages) {
+  const groq = getGroq();
+  let lastError;
+
+  for (const model of MODELS) {
+    try {
+      const response = await groq.chat.completions.create({
+        model,
+        messages,
+        max_tokens: 512,
+        temperature: 0.8,
+      });
+
+      const content = response.choices?.[0]?.message?.content?.trim();
+      if (content) return content;
+    } catch (err) {
+      lastError = err;
+      console.warn(`[AI Chat] Model "${model}" failed: ${err.message}`);
+      // If it's an auth error, no point trying other models
+      if (err.status === 401) throw err;
+    }
+  }
+
+  throw lastError || new Error("All Groq models failed.");
 }
 
 /**
@@ -53,27 +100,25 @@ function trimHistory(userId) {
 async function askAI(userId, userMessage) {
   const history = getHistory(userId);
 
-  // Append the new user message to history
+  // Append new user message
   history.push({ role: "user", content: userMessage });
 
   const messages = [SYSTEM_PROMPT, ...history];
 
-  const response = await groq.chat.completions.create({
-    model: "llama3-70b-8192",
-    messages,
-    max_tokens: 512,
-    temperature: 0.8,
-  });
+  try {
+    const reply = await tryGroq(messages);
 
-  const reply =
-    response.choices?.[0]?.message?.content?.trim() ??
-    "Sorry, I couldn't generate a response right now. Please try again!";
+    // Store the AI reply in history
+    history.push({ role: "assistant", content: reply });
+    trimHistory(userId);
 
-  // Store the AI reply in history
-  history.push({ role: "assistant", content: reply });
-  trimHistory(userId);
-
-  return reply;
+    return reply;
+  } catch (err) {
+    // Remove the last user message from history on failure so it can be retried
+    history.pop();
+    console.error("[AI Chat] Fatal error:", err.message);
+    throw err;
+  }
 }
 
 /**
