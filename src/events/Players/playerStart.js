@@ -332,9 +332,22 @@ async function handleButtonInteraction(interaction, player, client) {
 
 function setupMessageCollector(client, player, message) {
   try {
+    // Avoid duplicate collectors on the same message
+    if (message._collectorActive) return;
+    message._collectorActive = true;
+
     const track = player.queue?.current;
+    const trackLength = track?.length || track?.duration || 0;
+
+    // For live/stream tracks (length === 0) use 6 hours.
+    // For normal tracks, add a 30s buffer so the collector doesn't die just before the song ends.
+    // Never go below 30 seconds.
+    const collectorTime = trackLength > 0
+      ? Math.max(trackLength + 30000, 30000)
+      : 6 * 60 * 60 * 1000; // 6 hours for streams
+
     const collector = message.createMessageComponentCollector({
-      time: Math.min(track?.length || track?.duration || 600000, 900000),
+      time: collectorTime,
       componentType: ComponentType.Button,
     });
 
@@ -367,7 +380,8 @@ function setupMessageCollector(client, player, message) {
       }
     });
 
-    collector.on("end", (collected, reason) => {
+    collector.on("end", () => {
+      message._collectorActive = false;
     });
 
   } catch (error) {

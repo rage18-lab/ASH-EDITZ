@@ -44,7 +44,7 @@ module.exports = function loadPlayerManager(client) {
   const originalSearch = manager.search.bind(manager);
 
   manager.search = async function (query, options = {}) {
-    const node = [...this.shoukaku.nodes.values()].find(n => n.state === 1) || [...this.shoukaku.nodes.values()][0];
+    const node = [...this.shoukaku.nodes.values()].find(n => n.state === "CONNECTED") || [...this.shoukaku.nodes.values()][0];
     if (!node) return { type: "SEARCH", tracks: [] };
 
     let cleanQuery = query.trim().replace(/[<>]/g, '');

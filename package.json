@@ -23,6 +23,7 @@
     "discord.js": "14.22.1",
     "dokdo": "latest",
     "dotenv": "^16.4.7",
+    "groq-sdk": "^1.6.0",
     "kazagumo": "^3.3.0",
     "kazagumo-spotify": "^2.1.1",
     "moment": "^2.30.1",
