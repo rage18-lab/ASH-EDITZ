@@ -26,9 +26,9 @@
   },
   "nodes": [
     {
-      "name": "jirayu",
-      "url": "lavalink.jirayu.net:443",
-      "auth": "youshallnotpass",
+      "name": "triniumhost",
+      "url": "nodelink.triniumhost.com:443",
+      "auth": "free",
       "secure": true
     }
   ],
