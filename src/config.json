@@ -30,6 +30,12 @@
       "url": "nodelink.triniumhost.com:443",
       "auth": "free",
       "secure": true
+    },
+    {
+      "name": "jirayu-backup",
+      "url": "lavalink.jirayu.net:443",
+      "auth": "youshallnotpass",
+      "secure": true
     }
   ],
   "node_options": {
