@@ -1,14 +1,22 @@
-const { execSync } = require('child_process');
+const { spawnSync } = require('child_process');
+const path = require('path');
+const fs = require('fs');
 
-// Ensure native modules are compiled for the current Node.js version.
-// npm 11 blocks install scripts by default; this forces a rebuild if needed.
-try {
-  require('better-sqlite3');
-} catch (e) {
-  if (e.message && (e.message.includes('Could not locate the bindings file') || e.code === 'ERR_DLOPEN_FAILED')) {
-    console.log('[Setup] Native modules missing — rebuilding for Node ' + process.version + '...');
-    execSync('npm rebuild better-sqlite3', { stdio: 'inherit', cwd: __dirname });
-    console.log('[Setup] Rebuild complete. Starting bot...');
+// Check if better-sqlite3 native binary exists for the current Node version.
+// We bypass npm entirely and call node-gyp directly to avoid npm 11's allowScripts block.
+const bindingPath = path.join(__dirname, 'node_modules', 'better-sqlite3', 'build', 'Release', 'better_sqlite3.node');
+if (!fs.existsSync(bindingPath)) {
+  console.log('[Setup] better-sqlite3 binary missing. Compiling for Node ' + process.version + '...');
+  const result = spawnSync('node-gyp', ['rebuild', '--release'], {
+    stdio: 'inherit',
+    cwd: path.join(__dirname, 'node_modules', 'better-sqlite3'),
+    shell: true
+  });
+  if (result.status === 0) {
+    console.log('[Setup] Compile complete. Starting bot...');
+  } else {
+    console.error('[Setup] node-gyp failed. Trying npm rebuild as fallback...');
+    spawnSync('npm', ['rebuild', 'better-sqlite3'], { stdio: 'inherit', cwd: __dirname, shell: true });
   }
 }
 
