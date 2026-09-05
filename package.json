@@ -1,10 +1,10 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "name": "hot-pursuit",
-  "main": "Shard.js",
+  "main": "shard.js",
   "scripts": {
-    "start": "node --no-warnings Shard.js",
-    "dev": "nodemon --no-warnings Shard.js",
+    "start": "node --no-warnings shard.js",
+    "dev": "nodemon --no-warnings shard.js",
     "postinstall": "npm rebuild better-sqlite3 canvas"
   },
   "dependencies": {
