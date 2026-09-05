@@ -35,10 +35,5 @@
     "shoukaku": "^4.1.1",
     "songcard": "^1.4.1",
     "undici": "latest"
-  },
-  "allowScripts": {
-    "better-sqlite3@12.8.0": true,
-    "better-sqlite3@12.11.1": true,
-    "canvas@3.2.3": true
   }
 }
