@@ -20,8 +20,8 @@ class MusicBot extends Client {
         parse: ["roles", "users", "everyone"],
         repliedUser: false,
       },
-      shards: getInfo().SHARD_LIST,
-      shardCount: getInfo().TOTAL_SHARDS,
+      shards: (() => { try { return getInfo().SHARD_LIST; } catch { return [0]; } })(),
+      shardCount: (() => { try { return getInfo().TOTAL_SHARDS; } catch { return 1; } })(),
     });
 
     this.commands = new Collection();
