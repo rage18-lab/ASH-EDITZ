@@ -1,4 +1,4 @@
-FROM node:24-bookworm-slim
+FROM node:22-bookworm-slim
 
 # Install system dependencies for ffmpeg, canvas, sqlite, and voice
 RUN apt-get update && apt-get install -y \
