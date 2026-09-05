@@ -1,17 +1,20 @@
 const { spawnSync } = require('child_process');
 const path = require('path');
-const fs = require('fs');
 
-// Check if better-sqlite3 native binary exists for the current Node version.
-// We bypass npm entirely and call node-gyp directly to avoid npm 11's allowScripts block.
-const bindingPath = path.join(__dirname, 'node_modules', 'better-sqlite3', 'build', 'Release', 'better_sqlite3.node');
-if (!fs.existsSync(bindingPath)) {
-  console.log('[Setup] better-sqlite3 binary missing. Compiling for Node ' + process.version + '...');
+// Test if better-sqlite3 loads successfully for the current Node.js version.
+// If it fails (e.g. wrong ABI version or missing binary), we force a compile.
+try {
+  require('better-sqlite3');
+} catch (e) {
+  console.log('[Setup] better-sqlite3 failed to load. Recompiling for Node ' + process.version + '...');
+  console.log('[Setup] Error was:', e.message.split('\n')[0]);
+  
   const result = spawnSync('node-gyp', ['rebuild', '--release'], {
     stdio: 'inherit',
     cwd: path.join(__dirname, 'node_modules', 'better-sqlite3'),
     shell: true
   });
+  
   if (result.status === 0) {
     console.log('[Setup] Compile complete. Starting bot...');
   } else {
