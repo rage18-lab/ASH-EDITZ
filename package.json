@@ -4,7 +4,8 @@
   "main": "Shard.js",
   "scripts": {
     "start": "node --no-warnings Shard.js",
-    "dev": "nodemon --no-warnings Shard.js"
+    "dev": "nodemon --no-warnings Shard.js",
+    "postinstall": "npm rebuild better-sqlite3 canvas"
   },
   "dependencies": {
     "@discordjs/voice": "^0.17.0",
@@ -35,10 +36,5 @@
     "shoukaku": "^4.1.1",
     "songcard": "^1.4.1",
     "undici": "latest"
-  },
-  "allowScripts": {
-    "better-sqlite3@12.11.1": true,
-    "canvas@3.2.3": true,
-    "canvas@2.11.2": true
   }
 }
