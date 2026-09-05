@@ -1,3 +1,10 @@
+// If this file is launched directly (not as a cluster child), redirect to Shard.js
+if (!process.env.CLUSTER_MANAGER_MODE) {
+  console.log('[Startup] Not running inside ClusterManager — launching Shard.js instead...');
+  require('./Shard.js');
+  return;
+}
+
 require('dotenv').config();
 const dns = require("dns");
 dns.setDefaultResultOrder("ipv4first");

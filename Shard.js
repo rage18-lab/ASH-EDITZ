@@ -4,7 +4,8 @@ const path = require('path');
 // Test if better-sqlite3 loads successfully for the current Node.js version.
 // If it fails (e.g. wrong ABI version or missing binary), we force a compile.
 try {
-  require('better-sqlite3');
+  // We must instantiate it to force the native binding to load!
+  new (require('better-sqlite3'))(':memory:');
 } catch (e) {
   console.log('[Setup] better-sqlite3 failed to load. Recompiling for Node ' + process.version + '...');
   console.log('[Setup] Error was:', e.message.split('\n')[0]);
