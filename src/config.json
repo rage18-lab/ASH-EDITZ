@@ -26,27 +26,16 @@
   },
   "nodes": [
     {
-      "name": "triniumhost",
-      "url": "nodelink.triniumhost.com:443",
-      "auth": "free",
-      "secure": true
-    },
-    {
-      "name": "jirayu-backup",
-      "url": "lavalink.jirayu.net:443",
-      "auth": "youshallnotpass",
-      "secure": true
+      "id": "nexcloud",
+      "host": "n4.nexcloud.in",
+      "port": 2007,
+      "authorization": "bluekings",
+      "secure": false
     }
   ],
   "node_options": {
-    "moveOnDisconnect": true,
-    "resume": true,
-    "resumeTimeout": 60,
-    "resumeByLibrary": true,
-    "reconnectTries": 15,
-    "reconnectInterval": 10,
-    "restTimeout": 60000,
-    "voiceConnectionTimeout": 30000,
-    "userAgent": "Hot Pursuit"
+    "retryAmount": 15,
+    "retryDelay": 10000,
+    "requestTimeout": 60000
   }
 }

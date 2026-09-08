@@ -1,6 +1,4 @@
-const { Kazagumo, KazagumoTrack } = require("kazagumo");
-const { Connectors } = require("shoukaku");
-const Spotify = require("kazagumo-spotify");
+const { LavalinkManager } = require("lavalink-client");
 
 const searchEngines = {
   DEEZER: "dzsearch",
@@ -16,38 +14,50 @@ const searchEngines = {
 const fallbackEngines = ["ytmsearch", "amsearch", "spsearch", "ytsearch"];
 
 module.exports = function loadPlayerManager(client) {
-  const manager = new Kazagumo(
-    {
-      defaultSearchEngine: client.config.node_source || "ytmsearch",
-      send: (guildId, payload) => {
-        const guild = client.guilds.cache.get(guildId);
-        if (guild) guild.shard.send(payload);
-      },
-      plugins: client.config.spotifyId ? [
-        new Spotify({
-          clientId: client.config.spotifyId,
-          clientSecret: client.config.spotifySecret,
-          playlistPageLimit: 1,
-          albumPageLimit: 1,
-          searchLimit: 10,
-          searchMarket: 'IN',
-        }),
-      ] : [],
+  const nodes = client.config.nodes.map(node => ({
+    ...node,
+    ...client.config.node_options,
+  }));
+
+  const manager = new LavalinkManager({
+    nodes,
+    sendToShard: (guildId, payload) => {
+      const guild = client.guilds.cache.get(guildId);
+      if (guild) guild.shard.send(payload);
     },
-    new Connectors.DiscordJS(client),
-    client.config.nodes,
-    client.config.node_options
-  );
+    client: {
+      id: client.user?.id || "000000000000000000",
+      username: "Hot Pursuit",
+    },
+    playerOptions: {
+      defaultSearchPlatform: client.config.node_source || "ytmsearch",
+      volumeDecrementer: 1,
+      useUnresolvedData: true,
+      onDisconnect: {
+        autoReconnect: true,
+        destroyPlayer: false,
+      },
+      onEmptyQueue: {
+        destroyAfterMs: undefined, // handled manually via queueEnd event
+      },
+    },
+    queueOptions: {
+      maxPreviousTracks: 25,
+    },
+  });
 
   manager.searchEngines = searchEngines;
 
-  const originalSearch = manager.search.bind(manager);
+  // Override search with fallback-engine logic
+  const originalSearch = manager.search?.bind(manager);
 
-  manager.search = async function (query, options = {}) {
-    const node = [...this.shoukaku.nodes.values()].find(n => n.state === "CONNECTED") || [...this.shoukaku.nodes.values()][0];
-    if (!node) return { type: "SEARCH", tracks: [] };
+  manager.search = async function (query, requester, options = {}) {
+    const node = [...this.nodeManager.nodes.values()].find(n => n.connected) ||
+      [...this.nodeManager.nodes.values()][0];
+    if (!node) return { loadType: "empty", tracks: [] };
 
-    let cleanQuery = query.trim().replace(/[<>]/g, '');
+    let cleanQuery = (typeof query === "string" ? query : query.query || "").trim().replace(/[<>]/g, "");
+    const source = (typeof query === "object" ? query.source : null) || options.source;
 
     const ytIdRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
     const ytMatch = cleanQuery.match(ytIdRegex);
@@ -58,7 +68,7 @@ module.exports = function loadPlayerManager(client) {
     }
 
     const isUrl = /^https?:\/\//.test(cleanQuery);
-    const isYouTube = cleanQuery.includes('youtube.com') || cleanQuery.includes('youtu.be') || cleanQuery.includes('music.youtube.com');
+    const isYouTube = cleanQuery.includes("youtube.com") || cleanQuery.includes("youtu.be") || cleanQuery.includes("music.youtube.com");
 
     if (isYouTube) {
       const strategies = videoId
@@ -66,86 +76,68 @@ module.exports = function loadPlayerManager(client) {
         : [cleanQuery, `ytsearch:${cleanQuery}`, `ytmsearch:${cleanQuery}`];
 
       for (const q of strategies) {
-        const res = await node.rest.resolve(q).catch(() => null);
-        if (res && res.loadType !== 'EMPTY' && res.loadType !== 'ERROR' && res.loadType !== 'NO_MATCHES') {
-          const result = processSearchResult(res, options.requester);
-          if (result.tracks.length > 0) return result;
+        const res = await node.rest.loadTracks(q).catch(() => null);
+        if (res && res.loadType !== "empty" && res.loadType !== "error") {
+          if (res.tracks?.length > 0) return processResult(res, requester);
         }
       }
     }
 
     if (!isUrl) {
-      let searchEngineList = [options.engine || this.defaultSearchEngine];
-      if (!options.engine) {
-        searchEngineList = [...new Set([...searchEngineList, ...fallbackEngines])];
-      }
+      const engineList = source
+        ? [source]
+        : [...new Set([client.config.node_source || "ytmsearch", ...fallbackEngines])];
 
-      for (const engine of searchEngineList) {
+      for (const engine of engineList) {
         if (!engine) continue;
-        const searchQuery = engine.includes(':') ? cleanQuery : `${engine}:${cleanQuery}`;
-        const searchRes = await node.rest.resolve(searchQuery).catch(() => null);
-        if (searchRes && searchRes.loadType !== 'EMPTY' && searchRes.loadType !== 'ERROR' && searchRes.loadType !== 'NO_MATCHES') {
-          return processSearchResult(searchRes, options.requester);
+        const searchQuery = engine.includes(":") ? cleanQuery : `${engine}:${cleanQuery}`;
+        const res = await node.rest.loadTracks(searchQuery).catch(() => null);
+        if (res && res.loadType !== "empty" && res.loadType !== "error") {
+          return processResult(res, requester);
         }
       }
     }
 
-    return originalSearch(cleanQuery, options);
+    // fallback to built-in
+    if (originalSearch) {
+      return originalSearch({ query: cleanQuery, source }, requester).catch(() => ({ loadType: "empty", tracks: [] }));
+    }
+    return { loadType: "empty", tracks: [] };
   };
 
-  function processSearchResult(res, requester) {
-    if (!res) return { type: "SEARCH", tracks: [] };
-    const loadType = res.loadType?.toUpperCase() || '';
-
-    try {
-      if (loadType.includes('TRACK')) {
-        const trackData = res.data || (res.tracks ? res.tracks[0] : null);
-        if (!trackData) return { type: "SEARCH", tracks: [] };
-        return { type: "TRACK", tracks: [new KazagumoTrack(trackData, requester)] };
-      }
-
-      if (loadType.includes('PLAYLIST')) {
-        const playlistData = res.data || res;
-        const tracks = playlistData.tracks || res.tracks || [];
-        const name = playlistData.info?.name || res.playlistInfo?.name || "Unknown Playlist";
-        return {
-          type: "PLAYLIST",
-          playlistName: name,
-          tracks: (Array.isArray(tracks) ? tracks : []).map((track) => new KazagumoTrack(track, requester))
-        };
-      }
-
-      if (loadType.includes('SEARCH') || Array.isArray(res.data) || Array.isArray(res.tracks)) {
-        let tracks = [];
-        if (Array.isArray(res.data)) tracks = res.data;
-        else if (res.data?.tracks) tracks = res.data.tracks;
-        else if (Array.isArray(res.tracks)) tracks = res.tracks;
-
-        return {
-          type: "SEARCH",
-          tracks: tracks.map((track) => new KazagumoTrack(track, requester))
-        };
-      }
-    } catch (e) {
-      console.error("[Music] Result processing error:", e);
+  function processResult(res, requester) {
+    if (!res) return { loadType: "empty", tracks: [] };
+    // Stamp requester on each track
+    if (res.tracks) {
+      res.tracks = res.tracks.map(t => {
+        t.requester = requester;
+        return t;
+      });
     }
-    return { type: "SEARCH", tracks: [] };
+    return res;
   }
 
-  manager.on("nodeConnect", (node) => console.log(`[Lavalink] Node "${node.name}" connected.`));
-  manager.on("nodeError", (node, error) => console.log(`[Lavalink] Node "${node.name}" error: ${error.message}`));
-  manager.on("nodeDisconnect", (node, reason) => console.log(`[Lavalink] Node "${node.name}" disconnected. Reason: ${reason || 'Unknown'}`));
+  // Node-level events
+  manager.nodeManager.on("connect", (node) =>
+    console.log(`[Lavalink] Node "${node.id}" connected.`)
+  );
+  manager.nodeManager.on("error", (node, error) =>
+    console.log(`[Lavalink] Node "${node.id}" error: ${error?.message || error}`)
+  );
+  manager.nodeManager.on("disconnect", (node, reason) =>
+    console.log(`[Lavalink] Node "${node.id}" disconnected. Code: ${reason?.code || "?"}`)
+  );
+  manager.nodeManager.on("reconnecting", (node) =>
+    console.log(`[Lavalink] Node "${node.id}" reconnecting...`)
+  );
+  manager.nodeManager.on("reconnect", (node) =>
+    console.log(`[Lavalink] Node "${node.id}" reconnected.`)
+  );
 
-  manager.on("error", (error) => {
-    if (error.message?.includes("Connection exist but player not found")) return;
-    console.error(`[Kazagumo] Error:`, error);
+  manager.on("error", (player, error) => {
+    console.error(`[LavalinkManager] Error:`, error);
   });
-
-  manager.shoukaku.on("ready", (name) => console.log(`[Lavalink-Core] ${name} is READY.`));
-  manager.shoukaku.on("error", (name, error) => console.log(`[Lavalink-Core] ${name} ERROR: ${error}`));
-  manager.shoukaku.on("close", (name, code, reason) => console.log(`[Lavalink-Core] ${name} CLOSED (Code: ${code}, Reason: ${reason})`));
 
   client.manager = manager;
   return manager;
 };
-

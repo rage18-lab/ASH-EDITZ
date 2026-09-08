@@ -1,8 +1,5 @@
 const { Client, GatewayIntentBits, Collection } = require("discord.js");
-const { Kazagumo, Plugins } = require("kazagumo");
 const { readdirSync, existsSync } = require("fs");
-const { Connectors } = require("shoukaku");
-const Spotify = require("kazagumo-spotify");
 const { ClusterClient, getInfo } = require("discord-hybrid-sharding");
 const loadPlayerManager = require("../loaders/loadPlayerManager");
 const permissionHandler = require("../events/Client/PremiumChecks");
@@ -45,7 +42,6 @@ class MusicBot extends Client {
     this.db = require("./Database");
     this.logger.log("[DB] Local SQLite Database Initialized", "ready");
 
-
     try {
       this.voiceHealthMonitor = new VoiceHealthMonitor(this);
       this.logger.log("[VoiceHealth] Monitor Initialized Successfully", "ready");
@@ -56,6 +52,19 @@ class MusicBot extends Client {
 
     permissionHandler(this);
     loadPlayerManager(this);
+
+    // Forward all raw gateway events to lavalink-client
+    this.on("raw", (d) => {
+      if (this.manager) this.manager.sendRawData(d);
+    });
+
+    // Initialize lavalink-client with bot identity on ready
+    this.once("ready", () => {
+      if (this.manager) {
+        this.manager.init({ id: this.user.id, username: this.user.username });
+      }
+    });
+
     [
       "loadClients",
       "loadCommands",
@@ -72,4 +81,3 @@ class MusicBot extends Client {
 }
 
 module.exports = MusicBot;
-

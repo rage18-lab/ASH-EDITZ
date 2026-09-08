@@ -6,11 +6,10 @@ module.exports = (client) => {
   let totalEvents = 0;
   fs.readdirSync(nodeEventsPath).forEach((file) => {
     const event = require(path.join(nodeEventsPath, file));
-    client.manager.shoukaku.on(event.name, (...args) =>
+    client.manager.nodeManager.on(event.name, (...args) =>
       event.run(client, ...args),
     );
     totalEvents++;
   });
   client.logger.log(`Lavalink Node Events Loaded: ${totalEvents}`, "event");
 };
-
