@@ -4,8 +4,7 @@
   "main": "shard.js",
   "scripts": {
     "start": "node --no-warnings shard.js",
-    "dev": "nodemon --no-warnings shard.js",
-    "postinstall": "npm rebuild better-sqlite3 canvas"
+    "dev": "nodemon --no-warnings shard.js"
   },
   "dependencies": {
     "@discordjs/voice": "^0.17.0",
@@ -14,10 +13,9 @@
     "@napi-rs/canvas": "^0.1.77",
     "archiver": "^7.0.1",
     "axios": "^1.13.4",
-    "better-sqlite3": "^12.6.2",
+    "canvas": "npm:@napi-rs/canvas@^0.1.77",
     "canvacard": "^6.0.5",
     "canvafy": "^7.2.1",
-    "canvas": "npm:@napi-rs/canvas@^1.0.3",
     "delay": "^6.0.0",
     "discord-api-types": "^0.38.37",
     "discord-hybrid-sharding": "^2.2.6",
@@ -32,6 +30,7 @@
     "musicard": "^2.0.5",
     "musicard-quartz": "^1.0.0",
     "quickchart-js": "^3.1.3",
+    "sql.js": "^1.12.0",
     "songcard": "^1.4.1",
     "undici": "latest"
   }

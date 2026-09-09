@@ -39,8 +39,8 @@ class MusicBot extends Client {
     this.manager = null;
     this.spamMap = new Map();
     this.cooldowns = new Collection();
-    this.db = require("./Database");
-    this.logger.log("[DB] Local SQLite Database Initialized", "ready");
+    this.db = require("./Database"); // managers object, already populated by initDatabase()
+    this.logger.log("[DB] SQLite Database Connected (sql.js)", "ready");
 
     try {
       this.voiceHealthMonitor = new VoiceHealthMonitor(this);

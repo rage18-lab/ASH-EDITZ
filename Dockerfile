@@ -1,19 +1,17 @@
 FROM node:22-bookworm-slim
 
-# Install system dependencies for ffmpeg, canvas, sqlite, and voice
+# Only ffmpeg is needed for voice/audio processing.
+# sql.js ships as pure WASM — no node-gyp / python / make / g++ required.
 RUN apt-get update && apt-get install -y \
     ffmpeg \
-    python3 \
-    make \
-    g++ \
-    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install --production
+# Install all deps (including sql.js WASM assets)
+RUN npm install --no-fund --no-audit
 
 COPY . .
 
-CMD ["node", "--no-warnings", "Shard.js"]
+CMD ["node", "--no-warnings", "shard.js"]
