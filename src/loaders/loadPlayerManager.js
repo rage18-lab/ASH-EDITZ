@@ -51,13 +51,25 @@ module.exports = function loadPlayerManager(client) {
   // Override search with fallback-engine logic
   const originalSearch = manager.search?.bind(manager);
 
-  manager.search = async function (query, requester, options = {}) {
+  manager.search = async function (query, requesterOrOpts, options = {}) {
+    if (!this.nodeManager?.nodes) return { loadType: "empty", tracks: [] };
     const node = [...this.nodeManager.nodes.values()].find(n => n.connected) ||
       [...this.nodeManager.nodes.values()][0];
     if (!node) return { loadType: "empty", tracks: [] };
 
+    // Handle both call signatures:
+    //   manager.search(query, requester, options)  ← direct calls
+    //   manager.search(query, { requester, engine }) ← player.search() internals
+    let requester, source;
+    if (requesterOrOpts && typeof requesterOrOpts === "object" && !requesterOrOpts.id && (requesterOrOpts.requester !== undefined || requesterOrOpts.source !== undefined || requesterOrOpts.engine !== undefined)) {
+      requester = requesterOrOpts.requester;
+      source = requesterOrOpts.source || requesterOrOpts.engine || options.source;
+    } else {
+      requester = requesterOrOpts;
+      source = (typeof query === "object" ? query.source : null) || options.source || options.engine;
+    }
+
     let cleanQuery = (typeof query === "string" ? query : query.query || "").trim().replace(/[<>]/g, "");
-    const source = (typeof query === "object" ? query.source : null) || options.source;
 
     const ytIdRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
     const ytMatch = cleanQuery.match(ytIdRegex);
@@ -104,6 +116,7 @@ module.exports = function loadPlayerManager(client) {
     }
     return { loadType: "empty", tracks: [] };
   };
+
 
   function processResult(res, requester) {
     if (!res) return { loadType: "empty", tracks: [] };

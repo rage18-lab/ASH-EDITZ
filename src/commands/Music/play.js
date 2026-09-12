@@ -166,8 +166,11 @@ module.exports = {
 
       let player = client.manager.players.get(interaction.guild.id);
 
-      if (!player && client.manager.shoukaku.players.has(interaction.guild.id)) {
-        await client.manager.shoukaku.leaveVoiceChannel(interaction.guild.id).catch(() => { });
+      if (!player && client.manager.players.has(interaction.guild.id)) {
+        try {
+          const stalePlayer = client.manager.players.get(interaction.guild.id);
+          await stalePlayer.destroy().catch(() => client.manager.players.delete(interaction.guild.id));
+        } catch (_) { client.manager.players.delete(interaction.guild.id); }
         await new Promise(resolve => setTimeout(resolve, 500));
       }
 
@@ -716,8 +719,11 @@ module.exports = {
 
 
       player = client.manager.players.get(message.guild.id);
-      if (!player && client.manager.shoukaku && (client.manager.shoukaku.players?.has(message.guild.id) || client.manager.shoukaku.connections?.has(message.guild.id))) {
-        await client.manager.shoukaku.leaveVoiceChannel(message.guild.id).catch(() => { });
+      if (!player && client.manager.players.has(message.guild.id)) {
+        try {
+          const stalePlayer = client.manager.players.get(message.guild.id);
+          await stalePlayer.destroy().catch(() => client.manager.players.delete(message.guild.id));
+        } catch (_) { client.manager.players.delete(message.guild.id); }
         await new Promise(resolve => setTimeout(resolve, 500));
       }
 

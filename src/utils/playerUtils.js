@@ -1,3 +1,5 @@
+// lavalink-client v2 — no manager.shoukaku; voice leave is handled via player.destroy()
+
 async function safeDestroyPlayer(player) {
     if (!player) return;
 
@@ -20,9 +22,6 @@ async function handleSessionError(error, player, client) {
             if (client.manager.players.has(player.guildId)) {
                 client.manager.players.delete(player.guildId);
             }
-            if (client.manager.shoukaku) {
-                await client.manager.shoukaku.leaveVoiceChannel(player.guildId).catch(() => null);
-            }
         } catch (cleanupError) {
             console.error(`Error during session cleanup:`, cleanupError);
         }
@@ -34,6 +33,7 @@ async function handleSessionError(error, player, client) {
 
 async function recreatePlayer(client, guildId, voiceId, textId) {
     try {
+        // Destroy existing player if present
         if (client.manager.players.has(guildId)) {
             const oldPlayer = client.manager.players.get(guildId);
             try {
@@ -43,14 +43,7 @@ async function recreatePlayer(client, guildId, voiceId, textId) {
             }
         }
 
-        if (client.manager.shoukaku.players.has(guildId)) {
-            try {
-                await client.manager.shoukaku.leaveVoiceChannel(guildId);
-            } catch (e) {
-                console.log(`Failed to leave voice channel via Shoukaku for guild ${guildId}`);
-            }
-        }
-
+        // Try to force-leave voice via Discord API
         const guild = client.guilds.cache.get(guildId);
         if (guild?.members?.me?.voice?.channel) {
             try {
@@ -71,7 +64,7 @@ async function recreatePlayer(client, guildId, voiceId, textId) {
         });
 
         if (!newPlayer) {
-            throw new Error("Kazagumo failed to create a new player object");
+            throw new Error("lavalink-client failed to create a new player object");
         }
 
         return newPlayer;
@@ -115,9 +108,6 @@ async function forceCleanup(client, guildId) {
             } catch (e) {
                 client.manager.players.delete(guildId);
             }
-        }
-        if (client.manager.shoukaku) {
-            await client.manager.shoukaku.leaveVoiceChannel(guildId).catch(() => null);
         }
         if (client.voiceHealthMonitor) {
             client.voiceHealthMonitor.stopMonitoring(guildId);

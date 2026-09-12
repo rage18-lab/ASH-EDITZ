@@ -1,14 +1,15 @@
 
-// Shoukaku v4 State enum: CONNECTING=0, CONNECTED=1, DISCONNECTING=2, DISCONNECTED=3
+// lavalink-client v2 uses manager.nodeManager.nodes (not manager.shoukaku.nodes)
+// Nodes expose a boolean `.connected` property (not a numeric state enum)
 
 async function waitForNodeConnection(manager, maxWaitTime = 5000) {
     const startTime = Date.now();
 
     while (Date.now() - startTime < maxWaitTime) {
-        const connectedNodes = [...manager.shoukaku.nodes.values()].filter(node => node.state === 1);
-
-        if (connectedNodes.length > 0) {
-            return true;
+        const nodes = manager?.nodeManager?.nodes;
+        if (nodes) {
+            const connectedNodes = [...nodes.values()].filter(node => node.connected);
+            if (connectedNodes.length > 0) return true;
         }
 
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -19,18 +20,17 @@ async function waitForNodeConnection(manager, maxWaitTime = 5000) {
 
 
 function hasAvailableNodes(manager) {
-    const availableNodes = [...manager.shoukaku.nodes.values()].filter(
-        node => node.state === 1 // CONNECTED only
-    );
-    return availableNodes.length > 0;
+    const nodes = manager?.nodeManager?.nodes;
+    if (!nodes) return false;
+    return [...nodes.values()].some(node => node.connected);
 }
 
 
 function getAvailableNode(manager) {
-    const nodes = [...manager.shoukaku.nodes.values()].filter(
-        node => node.state === 1 // CONNECTED only
-    );
-    return nodes.length > 0 ? nodes[0] : null;
+    const nodes = manager?.nodeManager?.nodes;
+    if (!nodes) return null;
+    const connected = [...nodes.values()].filter(node => node.connected);
+    return connected.length > 0 ? connected[0] : null;
 }
 
 module.exports = {

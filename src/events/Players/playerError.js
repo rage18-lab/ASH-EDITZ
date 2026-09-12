@@ -78,13 +78,10 @@ module.exports = {
             }).catch(() => null);
           }
           try {
-            await player.destroy(guild.id);
+            await player.destroy();
           } catch (e) {
             if (client.manager.players.has(player.guildId)) {
               client.manager.players.delete(player.guildId);
-            }
-            if (client.manager.shoukaku) {
-              client.manager.shoukaku.leaveVoiceChannel(player.guildId).catch(() => null);
             }
           }
       }
@@ -92,13 +89,10 @@ module.exports = {
       console.error("Error in playerError handler:", err);
       if (player && !player.destroyed) {
         try {
-          await player.destroy(guild.id);
+          await player.destroy();
         } catch (e) {
           if (client.manager.players.has(player.guildId)) {
             client.manager.players.delete(player.guildId);
-          }
-          if (client.manager.shoukaku) {
-            client.manager.shoukaku.leaveVoiceChannel(player.guildId).catch(() => null);
           }
         }
       }

@@ -1,5 +1,3 @@
-const { KazagumoPlayer } = require("kazagumo");
-
 module.exports = {
   name: "playerCreate",
 
