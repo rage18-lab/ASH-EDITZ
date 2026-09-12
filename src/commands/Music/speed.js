@@ -58,7 +58,7 @@ module.exports = {
 
         try {
             const currentPitch = player.data.get("pitch") || 1.0;
-            await player.shoukaku.setFilters({ timescale: { speed: speed, pitch: currentPitch, rate: 1.0 } });
+            await player.setFilters({ timescale: { speed: speed, pitch: currentPitch, rate: 1.0 } });
             player.data.set("speed", speed);
             const successDisplay = new TextDisplayBuilder().setContent(`**${client.emoji.check} Playback speed set to \`${speed}x\`**`);
             const container = new ContainerBuilder().addTextDisplayComponents(successDisplay);
@@ -149,7 +149,7 @@ module.exports = {
 
                 try {
                     const currentPitch = player.data.get("pitch") || 1.0;
-                    await player.shoukaku.setFilters({
+                    await player.setFilters({
                         timescale: {
                             speed: speed,
                             pitch: currentPitch,
@@ -231,7 +231,7 @@ module.exports = {
 
         try {
             const currentPitch = player.data.get("pitch") || 1.0;
-            await player.shoukaku.setFilters({
+            await player.setFilters({
                 timescale: {
                     speed: speed,
                     pitch: currentPitch,

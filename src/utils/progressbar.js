@@ -7,7 +7,7 @@ module.exports = {
     if (!player.queue.current) return `[ ${slider}${line.repeat(size - 1)} ]`;
     const current =
       player.queue.current.length !== 0
-        ? player.shoukaku.position
+        ? player.position
         : player.queue.current.length;
     const total = player.queue.current.length;
     const bar =

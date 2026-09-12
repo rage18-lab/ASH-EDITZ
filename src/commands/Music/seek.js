@@ -62,12 +62,12 @@ module.exports = {
       return interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
     }
 
-    const position = player.shoukaku.position;
+    const position = player.position;
     const duration = player.queue.current.length;
     const song = player.queue.current;
 
     if (time <= duration) {
-      await player.shoukaku.seekTo(time);
+      await player.seek(time);
       const action = time > position ? "Forwarded" : "Rewound";
       const successDisplay = new TextDisplayBuilder()
         .setContent(
@@ -143,12 +143,12 @@ module.exports = {
       });
     }
 
-    const position = player.shoukaku.position;
+    const position = player.position;
     const duration = player.queue.current.length;
     const song = player.queue.current;
 
     if (time <= duration) {
-      await player.shoukaku.seekTo(time);
+      await player.seek(time);
       const action = time > position ? "Forwarded" : "Rewound";
 
       const successDisplay = new TextDisplayBuilder()

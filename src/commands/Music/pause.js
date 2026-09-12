@@ -68,7 +68,7 @@ module.exports = {
       });
     }
 
-    if (player.shoukaku.paused) {
+    if (player.paused) {
       const infoDisplay = new TextDisplayBuilder()
         .setContent(`**${client.emoji.info} The player is already paused.**`);
 

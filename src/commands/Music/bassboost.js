@@ -56,7 +56,7 @@ module.exports = {
     try {
       // Apply or remove EQ bands via Shoukaku
       const bands = newState ? BASS_BANDS : FLAT_BANDS;
-      await player.shoukaku.setEqualizer(bands);
+      await player.setEqualizer(bands);
       player.data?.set("bassBoostEnabled", newState);
     } catch (err) {
       console.error("[BassBoost] Failed to set equalizer:", err);
@@ -117,7 +117,7 @@ module.exports = {
         const nextBands = nextState ? BASS_BANDS : FLAT_BANDS;
 
         try {
-          await player.shoukaku.setEqualizer(nextBands);
+          await player.setEqualizer(nextBands);
           player.data?.set("bassBoostEnabled", nextState);
         } catch (err) {
           return btnInteraction.reply({ content: `**${client.emoji.cross} Failed to toggle filter.**`, ephemeral: true });

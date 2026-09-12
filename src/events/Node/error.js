@@ -29,11 +29,6 @@ module.exports = {
           if (player.node && player.node.name === name) {
             client.logger.log(`Cleaning up player for guild ${player.guildId} due to session loss`, "warn");
 
-            player.destroy().catch(() => {
-              client.manager.players.delete(player.guildId);
-              if (client.manager.shoukaku) {
-                client.manager.shoukaku.leaveVoiceChannel(player.guildId).catch(() => null);
-              }
             });
 
             if (client.voiceHealthMonitor) {

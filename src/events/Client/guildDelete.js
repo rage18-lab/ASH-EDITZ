@@ -66,12 +66,7 @@ module.exports = {
           const player = client.manager.players.get(guild.id);
           player.destroy().catch(() => {
             client.manager.players.delete(guild.id);
-            if (client.manager.shoukaku) {
-              client.manager.shoukaku.leaveVoiceChannel(guild.id).catch(() => null);
-            }
           });
-        } else if (client.manager.shoukaku) {
-          client.manager.shoukaku.leaveVoiceChannel(guild.id).catch(() => null);
         }
       }
     } catch (playerError) {

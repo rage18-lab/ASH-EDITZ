@@ -71,7 +71,7 @@ module.exports = {
       });
     }
 
-    if (!player.shoukaku.paused) {
+    if (!player.paused) {
       const warnDisplay = new TextDisplayBuilder()
         .setContent(`**${client.emoji.warn} The player is already resumed.**`);
 

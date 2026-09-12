@@ -1210,18 +1210,18 @@ async function performSmartSelection(query, requester, client) {
 
   const searchPromises = shuffledSources.map(async (source) => {
     try {
-      const node = [...client.manager.shoukaku.nodes.values()][0];
+      const nodes = client.manager.nodeManager?.nodes;
+      const node = nodes ? [...nodes.values()].find(n => n.connected) || [...nodes.values()][0] : null;
       if (!node) return { source, tracks: [] };
 
       const searchQuery = `${source.engine}:${query}`;
-      const res = await node.rest.resolve(searchQuery);
+      const res = await node.rest.loadTracks(searchQuery);
 
       if (res && res.loadType === 'search' && res.data && res.data.length > 0) {
-        const { KazagumoTrack } = require('kazagumo');
         const tracks = res.data.map(track => {
-          const kazagumoTrack = new KazagumoTrack(track, requester);
-          kazagumoTrack.sourceInfo = source;
-          return kazagumoTrack;
+          track.requester = requester;
+          track.sourceInfo = source;
+          return track;
         });
         return { source, tracks: tracks.slice(0, 3) };
       }

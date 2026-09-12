@@ -8,7 +8,6 @@ const {
     SectionBuilder,
     MessageFlags
 } = require('discord.js');
-const { KazagumoTrack } = require('kazagumo');
 const { convertTime } = require("../../utils/convert.js");
 
 
@@ -86,7 +85,8 @@ module.exports = {
             });
         }
 
-        const node = [...client.manager.shoukaku.nodes.values()][0];
+        const nodes = client.manager.nodeManager?.nodes;
+        const node = nodes ? [...nodes.values()].find(n => n.connected) || [...nodes.values()][0] : null;
         if (!node) {
             const errorDisplay = new TextDisplayBuilder().setContent(`**${client.emoji.cross} No music node available**`);
             const container = new ContainerBuilder().addTextDisplayComponents(errorDisplay);

@@ -136,48 +136,48 @@ module.exports = {
 
             switch (value) {
                 case "clear":
-                    await player.shoukaku.clearFilters();
+                    await player.resetFilters();
                     filterName = "None";
                     break;
                 case "8d_but":
-                    await player.shoukaku.setFilters({ rotation: { rotationHz: 0.2 } });
+                    await player.setFilters({ rotation: { rotationHz: 0.2 } });
                     break;
                 case "bass_but":
-                    await player.shoukaku.setFilters({ equalizer: [{ band: 0, gain: 0.3 }, { band: 1, gain: 0.25 }, { band: 2, gain: 0.2 }, { band: 3, gain: 0.1 }] });
+                    await player.setFilters({ equalizer: [{ band: 0, gain: 0.3 }, { band: 1, gain: 0.25 }, { band: 2, gain: 0.2 }, { band: 3, gain: 0.1 }] });
                     break;
                 case "deepbass_but":
-                    await player.shoukaku.setFilters({ equalizer: [{ band: 0, gain: 0.6 }, { band: 1, gain: 0.5 }, { band: 2, gain: 0.4 }, { band: 3, gain: 0.3 }, { band: 4, gain: 0.2 }] });
+                    await player.setFilters({ equalizer: [{ band: 0, gain: 0.6 }, { band: 1, gain: 0.5 }, { band: 2, gain: 0.4 }, { band: 3, gain: 0.3 }, { band: 4, gain: 0.2 }] });
                     break;
                 case "treble_but":
-                    await player.shoukaku.setFilters({ equalizer: [{ band: 10, gain: 0.3 }, { band: 11, gain: 0.35 }, { band: 12, gain: 0.4 }, { band: 13, gain: 0.45 }] });
+                    await player.setFilters({ equalizer: [{ band: 10, gain: 0.3 }, { band: 11, gain: 0.35 }, { band: 12, gain: 0.4 }, { band: 13, gain: 0.45 }] });
                     break;
                 case "night_but":
-                    await player.shoukaku.setFilters({ timescale: { speed: 1.15, pitch: 1.2, rate: 1.0 } });
+                    await player.setFilters({ timescale: { speed: 1.15, pitch: 1.2, rate: 1.0 } });
                     break;
                 case "daycore_but":
-                    await player.shoukaku.setFilters({ timescale: { speed: 0.85, pitch: 0.85, rate: 1.0 } });
+                    await player.setFilters({ timescale: { speed: 0.85, pitch: 0.85, rate: 1.0 } });
                     break;
                 case "slowed_but":
-                    await player.shoukaku.setFilters({ timescale: { speed: 0.88, pitch: 0.9 }, reverb: { roomSize: 0.7, damping: 0.5, wet: 0.33, dry: 0.4 } });
+                    await player.setFilters({ timescale: { speed: 0.88, pitch: 0.9 }, reverb: { roomSize: 0.7, damping: 0.5, wet: 0.33, dry: 0.4 } });
                     break;
                 case "vapo_but":
-                    await player.shoukaku.setFilters({ timescale: { speed: 0.8, pitch: 0.8 }, tremolo: { depth: 0.3, frequency: 10 } });
+                    await player.setFilters({ timescale: { speed: 0.8, pitch: 0.8 }, tremolo: { depth: 0.3, frequency: 10 } });
                     break;
                 case "chipmunk_but":
-                    await player.shoukaku.setFilters({ timescale: { speed: 1.3, pitch: 1.3, rate: 1.0 } });
+                    await player.setFilters({ timescale: { speed: 1.3, pitch: 1.3, rate: 1.0 } });
                     break;
                 case "karaoke_but":
-                    await player.shoukaku.setFilters({ karaoke: { level: 1.0, monoLevel: 1.0, filterBand: 220.0, filterWidth: 100.0 } });
+                    await player.setFilters({ karaoke: { level: 1.0, monoLevel: 1.0, filterBand: 220.0, filterWidth: 100.0 } });
                     break;
                 case "soft_but":
-                    await player.shoukaku.setFilters({ lowPass: { smoothing: 20.0 } });
+                    await player.setFilters({ lowPass: { smoothing: 20.0 } });
                     break;
                 case "china_but":
-                    await player.shoukaku.setFilters({ timescale: { speed: 0.75, pitch: 1.25, rate: 1.25 } });
+                    await player.setFilters({ timescale: { speed: 0.75, pitch: 1.25, rate: 1.25 } });
                     break;
 
                 case "vibrato_but":
-                    await player.shoukaku.setFilters({ vibrato: { frequency: 4.0, depth: 0.75 }, });
+                    await player.setFilters({ vibrato: { frequency: 4.0, depth: 0.75 }, });
                     break;
             }
 

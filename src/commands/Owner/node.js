@@ -19,7 +19,7 @@ module.exports = {
 
   slashOptions: [],
   async slashExecute(interaction, client) {
-    const nodes = [...client.manager.shoukaku.nodes.values()];
+    const nodes = [...client.manager.nodeManager.nodes.values()];
 
     if (nodes.length === 0 || !nodes[0].stats) {
       const errorDisplay = new TextDisplayBuilder()
@@ -87,7 +87,7 @@ module.exports = {
     });
   },
   async execute(message, args, client, prefix) {
-    const nodes = [...client.manager.shoukaku.nodes.values()];
+    const nodes = [...client.manager.nodeManager.nodes.values()];
 
     if (nodes.length === 0 || !nodes[0].stats) {
       const errorDisplay = new TextDisplayBuilder()

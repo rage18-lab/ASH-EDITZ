@@ -136,9 +136,6 @@ module.exports = {
           if (client.manager.players.has(guildId)) {
             client.manager.players.delete(guildId);
           }
-          if (client.manager.shoukaku) {
-            await client.manager.shoukaku.leaveVoiceChannel(guildId).catch(() => null);
-          }
         }
 
       } catch (error) {
@@ -254,9 +251,6 @@ module.exports = {
             } catch (destroyError) {
               if (client.manager.players.has(guildId)) {
                 client.manager.players.delete(guildId);
-              }
-              if (client.manager.shoukaku) {
-                await client.manager.shoukaku.leaveVoiceChannel(guildId).catch(() => null);
               }
             }
 

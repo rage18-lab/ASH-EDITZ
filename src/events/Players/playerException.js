@@ -110,10 +110,6 @@ module.exports = {
             if (client.manager.players.has(player.guildId)) {
               client.manager.players.delete(player.guildId);
             }
-            if (client.manager.shoukaku) {
-              client.manager.shoukaku.leaveVoiceChannel(player.guildId).catch(() => null);
-            }
-          }
         }
       }
     } catch (err) {
