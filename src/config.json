@@ -26,11 +26,11 @@
   },
   "nodes": [
     {
-      "id": "nexcloud",
-      "host": "n4.nexcloud.in",
-      "port": 2007,
-      "authorization": "bluekings",
-      "secure": false
+      "id": "lavalink-1",
+      "host": "lavalink.devamop.in",
+      "port": 443,
+      "authorization": "DevamOP",
+      "secure": true
     }
   ],
   "node_options": {
