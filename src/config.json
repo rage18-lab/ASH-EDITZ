@@ -26,11 +26,11 @@
   },
   "nodes": [
     {
-      "id": "lava-link",
-      "host": "lava.link",
-      "port": 80,
-      "authorization": "disforge.com",
-      "secure": false
+      "id": "serenetia",
+      "host": "lavalinkv4.serenetia.com",
+      "port": 443,
+      "authorization": "https://dsc.gg/ajidevserver",
+      "secure": true
     }
   ],
   "node_options": {
