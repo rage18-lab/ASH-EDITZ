@@ -26,24 +26,10 @@
   },
   "nodes": [
     {
-      "id": "lavalink-1",
-      "host": "lavalink.devamop.in",
-      "port": 443,
-      "authorization": "DevamOP",
-      "secure": true
-    },
-    {
-      "id": "lavalink-2",
-      "host": "lavalink.jirayu.net",
-      "port": 13592,
-      "authorization": "youshallnotpass",
-      "secure": false
-    },
-    {
-      "id": "lavalink-3",
-      "host": "lavalink.clxud.tech",
-      "port": 2333,
-      "authorization": "youshallnotpass",
+      "id": "nexcloud",
+      "host": "n4.nexcloud.in",
+      "port": 2007,
+      "authorization": "bluekings",
       "secure": false
     }
   ],
