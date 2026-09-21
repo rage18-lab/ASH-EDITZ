@@ -1,10 +1,10 @@
 const {
   MessageFlags,
   PermissionsBitField,
+  PermissionFlagsBits,
   ContainerBuilder,
   TextDisplayBuilder
 } = require("discord.js");
-const emoji = require("../../emojis");
 
 module.exports = {
   name: "join",
@@ -52,7 +52,11 @@ module.exports = {
       });
     }
 
-    if (!interaction.guild.members.me.permissions.has(PermissionsBitField.resolve(["Speak", "Connect"]))) {
+    if (
+      !interaction.guild.members.me.permissionsIn(interaction.member.voice.channel).has(
+        PermissionFlagsBits.Connect | PermissionFlagsBits.Speak
+      )
+    ) {
       const errorDisplay = new TextDisplayBuilder()
         .setContent(`**${client.emoji.warn} I don't have enough permissions to execute this command! Please give me permission \`CONNECT\` or \`SPEAK\`.**`);
 
@@ -106,15 +110,15 @@ module.exports = {
       const container = new ContainerBuilder()
         .addTextDisplayComponents(warnDisplay);
 
-      return await message.channel.send({
+      return message.reply({
         components: [container],
         flags: MessageFlags.IsComponentsV2
       });
     }
 
     if (
-      !message.guild.members.me.permissions.has(
-        PermissionsBitField.resolve(["Speak", "Connect"]),
+      !message.guild.members.me.permissionsIn(message.member.voice.channel).has(
+        PermissionFlagsBits.Connect | PermissionFlagsBits.Speak
       )
     ) {
       const errorDisplay = new TextDisplayBuilder()
@@ -125,7 +129,7 @@ module.exports = {
       const container = new ContainerBuilder()
         .addTextDisplayComponents(errorDisplay);
 
-      return message.channel.send({
+      return message.reply({
         components: [container],
         flags: MessageFlags.IsComponentsV2
       });
@@ -154,5 +158,3 @@ module.exports = {
     });
   },
 };
-
-

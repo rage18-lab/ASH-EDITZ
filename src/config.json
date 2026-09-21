@@ -26,11 +26,11 @@
   },
   "nodes": [
     {
-      "id": "serenetia",
-      "host": "lavalinkv4.serenetia.com",
-      "port": 443,
-      "authorization": "https://seretia.link/discord",
-      "secure": true
+      "id": "bluekings",
+      "host": "n4.nexcloud.in",
+      "port": 2007,
+      "authorization": "lavalink",
+      "secure": false
     }
   ],
   "node_options": {
