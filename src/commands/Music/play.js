@@ -392,20 +392,17 @@ module.exports = {
           `-# Position \` #${position} \` • Duration \` ${convertTime(track.length)} \` • By \` ${interaction.user.username} \``
         );
 
-      const section = new SectionBuilder()
-        .addTextDisplayComponents(titleDisplay, infoDisplay);
+      const cleanThumb = getCleanThumbnail(track.thumbnail || track.artworkUrl);
+      const container = new ContainerBuilder();
 
-      if (track.thumbnail || track.artworkUrl) {
-        const cleanThumbnail = getCleanThumbnail(track.thumbnail || track.artworkUrl);
-        if (cleanThumbnail) {
-          section.setThumbnailAccessory((thumbnail) =>
-            thumbnail.setURL(cleanThumbnail)
-          );
-        }
+      if (cleanThumb) {
+        const section = new SectionBuilder()
+          .addTextDisplayComponents(titleDisplay, infoDisplay)
+          .setThumbnailAccessory((t) => t.setURL(cleanThumb));
+        container.addSectionComponents(section);
+      } else {
+        container.addTextDisplayComponents(titleDisplay, infoDisplay);
       }
-
-      const container = new ContainerBuilder()
-        .addSectionComponents(section);
 
       if (position > 0) {
         const removeButton = new ButtonBuilder()
@@ -544,20 +541,16 @@ module.exports = {
                 `-# Position \` #${position} \` • Duration \` ${convertTime(track.length)} \` • By \` ${interaction.user.username} \``
               );
 
-            const finalSection = new SectionBuilder()
-              .addTextDisplayComponents(finalTitleDisplay, finalInfoDisplay);
-
-            if (track.thumbnail || track.artworkUrl) {
-              const cleanThumbnail = getCleanThumbnail(track.thumbnail || track.artworkUrl);
-              if (cleanThumbnail) {
-                finalSection.setThumbnailAccessory((thumbnail) =>
-                  thumbnail.setURL(cleanThumbnail)
-                );
-              }
+            const finalCleanThumb = getCleanThumbnail(track.thumbnail || track.artworkUrl);
+            const finalContainer = new ContainerBuilder();
+            if (finalCleanThumb) {
+              const finalSection = new SectionBuilder()
+                .addTextDisplayComponents(finalTitleDisplay, finalInfoDisplay)
+                .setThumbnailAccessory((t) => t.setURL(finalCleanThumb));
+              finalContainer.addSectionComponents(finalSection);
+            } else {
+              finalContainer.addTextDisplayComponents(finalTitleDisplay, finalInfoDisplay);
             }
-
-            const finalContainer = new ContainerBuilder()
-              .addSectionComponents(finalSection);
 
             replyMsg.edit({
               components: [finalContainer],
@@ -1006,20 +999,16 @@ module.exports = {
             `> Position \` #${track.position} \` • Duration \` ${convertTime(track.track.length)} \` • By \` ${message.author.username} \``
           );
 
-        const section = new SectionBuilder()
-          .addTextDisplayComponents(titleDisplay, infoDisplay);
-
-        if (track.track.thumbnail || track.track.artworkUrl) {
-          const cleanThumbnail = getCleanThumbnail(track.track.thumbnail || track.track.artworkUrl);
-          if (cleanThumbnail) {
-            section.setThumbnailAccessory((thumbnail) =>
-              thumbnail.setURL(cleanThumbnail)
-            );
-          }
+        const cleanThumbP = getCleanThumbnail(track.track.thumbnail || track.track.artworkUrl);
+        const container = new ContainerBuilder();
+        if (cleanThumbP) {
+          const section = new SectionBuilder()
+            .addTextDisplayComponents(titleDisplay, infoDisplay)
+            .setThumbnailAccessory((t) => t.setURL(cleanThumbP));
+          container.addSectionComponents(section);
+        } else {
+          container.addTextDisplayComponents(titleDisplay, infoDisplay);
         }
-
-        const container = new ContainerBuilder()
-          .addSectionComponents(section);
 
         if (track.position > 0) {
           const removeButton = new ButtonBuilder()
@@ -1146,20 +1135,16 @@ module.exports = {
                   `> Position \` #${track.position} \` • Duration \` ${convertTime(track.track.length)} \` • By \` ${message.author.username} \``
                 );
 
-              const finalSection = new SectionBuilder()
-                .addTextDisplayComponents(finalTitleDisplay, finalInfoDisplay);
-
-              if (track.track.thumbnail || track.track.artworkUrl) {
-                const cleanThumbnail = getCleanThumbnail(track.track.thumbnail || track.track.artworkUrl);
-                if (cleanThumbnail) {
-                  finalSection.setThumbnailAccessory((thumbnail) =>
-                    thumbnail.setURL(cleanThumbnail)
-                  );
-                }
+              const finalCleanThumbP = getCleanThumbnail(track.track.thumbnail || track.track.artworkUrl);
+              const finalContainer = new ContainerBuilder();
+              if (finalCleanThumbP) {
+                const finalSection = new SectionBuilder()
+                  .addTextDisplayComponents(finalTitleDisplay, finalInfoDisplay)
+                  .setThumbnailAccessory((t) => t.setURL(finalCleanThumbP));
+                finalContainer.addSectionComponents(finalSection);
+              } else {
+                finalContainer.addTextDisplayComponents(finalTitleDisplay, finalInfoDisplay);
               }
-
-              const finalContainer = new ContainerBuilder()
-                .addSectionComponents(finalSection);
 
               replyMsg.edit({
                 components: [finalContainer],

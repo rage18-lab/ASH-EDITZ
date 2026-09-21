@@ -88,20 +88,17 @@ function buildNowPlayingContainer(client, track, paused) {
       `> - **Requester:** [${track.requester?.username}](https://discord.com/users/${track.requester?.id})`
     );
 
-  const section = new SectionBuilder()
-    .addTextDisplayComponents(titleDisplay, infoDisplay);
+  const container = new ContainerBuilder();
 
-  if (track.thumbnail || track.artworkUrl || track.image) {
-    const cleanThumbnail = getCleanThumbnail(track.thumbnail || track.artworkUrl || track.image);
-    if (cleanThumbnail) {
-      section.setThumbnailAccessory((thumbnail) =>
-        thumbnail.setURL(cleanThumbnail)
-      );
-    }
+  const cleanThumbnail = getCleanThumbnail(track.thumbnail || track.artworkUrl || track.image);
+  if (cleanThumbnail) {
+    const section = new SectionBuilder()
+      .addTextDisplayComponents(titleDisplay, infoDisplay)
+      .setThumbnailAccessory((thumbnail) => thumbnail.setURL(cleanThumbnail));
+    container.addSectionComponents(section);
+  } else {
+    container.addTextDisplayComponents(titleDisplay, infoDisplay);
   }
-
-  const container = new ContainerBuilder()
-    .addSectionComponents(section);
 
   const buttonRow = createButtonRow(client, paused);
   container.addActionRowComponents(buttonRow);
