@@ -26,10 +26,10 @@
   },
   "nodes": [
     {
-      "id": "serenetia",
-      "host": "lavalinkv4.serenetia.com",
+      "id": "trinium",
+      "host": "lavalink-v4.triniumhost.com",
       "port": 443,
-      "authorization": "https://seretia.link/discord",
+      "authorization": "free",
       "secure": true
     }
   ],
