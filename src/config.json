@@ -26,10 +26,24 @@
   },
   "nodes": [
     {
-      "id": "bluekings",
-      "host": "n4.nexcloud.in",
-      "port": 2007,
-      "authorization": "lavalink",
+      "id": "jirayu",
+      "host": "lavalink.jirayu.net",
+      "port": 13592,
+      "authorization": "youshallnotpass",
+      "secure": false
+    },
+    {
+      "id": "serenetia",
+      "host": "lavalinkv4.serenetia.com",
+      "port": 80,
+      "authorization": "https://seretia.link/discord",
+      "secure": false
+    },
+    {
+      "id": "g3v",
+      "host": "lava.g3v.co.uk",
+      "port": 9008,
+      "authorization": "lavalinklol",
       "secure": false
     }
   ],
