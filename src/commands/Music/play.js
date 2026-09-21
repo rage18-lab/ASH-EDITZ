@@ -199,16 +199,37 @@ module.exports = {
         }
       } else {
         if (player.voiceId !== channel.id) {
-          const errorDisplay = new TextDisplayBuilder()
-            .setContent(`**${client.emoji.warn} I'm already connected to a different voice channel.**`);
+          // Check if the bot is actually still in that other channel
+          const botMember = interaction.guild.members.cache.get(client.user.id);
+          const botActualChannelId = botMember?.voice?.channelId;
 
-          const container = new ContainerBuilder()
-            .addTextDisplayComponents(errorDisplay);
+          if (!botActualChannelId) {
+            // Bot is not in any VC — stale player. Destroy and recreate.
+            try { await player.destroy(); } catch (_) {}
+            client.manager.players.delete(interaction.guild.id);
+            player = await client.manager.createPlayer({
+              guildId: interaction.guild.id,
+              voiceId: channel.id,
+              textId: interaction.channel.id,
+              volume: 80,
+              deaf: true,
+            });
+          } else if (botActualChannelId === channel.id) {
+            // Bot is already in the user's channel — just update player voiceId
+            player.voiceId = channel.id;
+          } else {
+            // Bot is truly in a different active channel
+            const errorDisplay = new TextDisplayBuilder()
+              .setContent(`**${client.emoji.warn} I'm already connected to a different voice channel.**`);
 
-          return interaction.editReply({
-            components: [container],
-            flags: MessageFlags.IsComponentsV2
-          });
+            const container = new ContainerBuilder()
+              .addTextDisplayComponents(errorDisplay);
+
+            return interaction.editReply({
+              components: [container],
+              flags: MessageFlags.IsComponentsV2
+            });
+          }
         }
 
         if (player.textId !== interaction.channel.id) {
