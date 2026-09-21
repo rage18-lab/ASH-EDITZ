@@ -26,11 +26,11 @@
   },
   "nodes": [
     {
-      "id": "lavalink-1",
-      "host": "lavalink.devamop.in",
-      "port": 443,
-      "authorization": "DevamOP",
-      "secure": true
+      "id": "lava-link",
+      "host": "lava.link",
+      "port": 80,
+      "authorization": "disforge.com",
+      "secure": false
     }
   ],
   "node_options": {
