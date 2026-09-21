@@ -40,7 +40,7 @@ const createButtonRow = (client, paused) => {
 };
 
 function formatDuration(ms) {
-  if (!ms || ms === 0) return 'Unknown';
+  if (!ms || ms === 0) return 'Live';
 
   const seconds = Math.floor(ms / 1000);
   const minutes = Math.floor(seconds / 60);
@@ -78,19 +78,27 @@ function getCleanThumbnail(thumbnailUrl) {
 }
 
 function buildNowPlayingContainer(client, track, paused) {
+  const info = track.info || track; // support both track.info.* and flat track.*
+  const title = info.title || 'Unknown Title';
+  const uri = info.uri || info.url || '#';
+  const author = info.author || 'Unknown Artist';
+  const duration = info.duration || info.length || 0;
+  const artworkUrl = info.artworkUrl || info.thumbnail || info.image;
+  const requester = track.requester;
+
   const titleDisplay = new TextDisplayBuilder()
-    .setContent(`### [${truncateTitle(track.title)}](${track.uri || track.url})`);
+    .setContent(`### [${truncateTitle(title)}](${uri})`);
 
   const infoDisplay = new TextDisplayBuilder()
     .setContent(
-      `> - **Author:** [${cleanAuthorName(track.author)}](${track.uri || track.url})\n` +
-      `> - **Duration:** \`${formatDuration(track.length || track.duration || 0)}\`\n` +
-      `> - **Requester:** [${track.requester?.username}](https://discord.com/users/${track.requester?.id})`
+      `> - **Author:** [${cleanAuthorName(author)}](${uri})\n` +
+      `> - **Duration:** \`${info.isStream ? 'LIVE' : formatDuration(duration)}\`\n` +
+      `> - **Requester:** [${requester?.username || 'Unknown'}](https://discord.com/users/${requester?.id || '0'})`
     );
 
   const container = new ContainerBuilder();
 
-  const cleanThumbnail = getCleanThumbnail(track.thumbnail || track.artworkUrl || track.image);
+  const cleanThumbnail = getCleanThumbnail(artworkUrl);
   if (cleanThumbnail) {
     const section = new SectionBuilder()
       .addTextDisplayComponents(titleDisplay, infoDisplay)
@@ -226,7 +234,7 @@ async function handleButtonInteraction(interaction, player, client) {
             player.queue.unshift(result.tracks[0]);
             history.pop();
             player.data?.set("history", history);
-            await player.skip();
+            player.skip();
           }
         } catch (error) {
           console.error("Error loading previous track:", error);
@@ -465,7 +473,7 @@ async function handleTrackStart(client, player, track) {
 
     const oldMessage = player.data?.get("message");
     if (oldMessage) {
-      oldMessage.delete().catch(() => { });
+      try { await oldMessage.delete(); } catch (_) {}
     }
 
     if (client.voiceHealthMonitor) {

@@ -386,13 +386,14 @@ module.exports = {
       const titleDisplay = new TextDisplayBuilder()
         .setContent(`### ${client.emoji.check} Track Added`);
 
+      const tInfo = track.info || track;
       const infoDisplay = new TextDisplayBuilder()
         .setContent(
-          `[**${truncateTitle(track.title, 25)}**](${track.uri}) by \` ${cleanAuthorName(track.author)} \`\n` +
-          `-# Position \` #${position} \` • Duration \` ${convertTime(track.length)} \` • By \` ${interaction.user.username} \``
+          `[**${truncateTitle(tInfo.title, 25)}**](${tInfo.uri || '#'}) by \` ${cleanAuthorName(tInfo.author)} \`\n` +
+          `-# Position \` #${position} \` • Duration \` ${convertTime(tInfo.duration || tInfo.length)} \` • By \` ${interaction.user.username} \``
         );
 
-      const cleanThumb = getCleanThumbnail(track.thumbnail || track.artworkUrl);
+      const cleanThumb = getCleanThumbnail(tInfo.artworkUrl || tInfo.thumbnail);
       const container = new ContainerBuilder();
 
       if (cleanThumb) {
@@ -406,7 +407,7 @@ module.exports = {
 
       if (position > 0) {
         const removeButton = new ButtonBuilder()
-          .setCustomId(`remove_${track.identifier}_${position}`)
+          .setCustomId(`remove_${tInfo.identifier}_${position}`)
           .setLabel('Remove')
           .setStyle(ButtonStyle.Danger);
 
@@ -535,13 +536,14 @@ module.exports = {
             const finalTitleDisplay = new TextDisplayBuilder()
               .setContent(`### ${client.emoji.check} Track Added`);
 
+            const ftInfo = track.info || track;
             const finalInfoDisplay = new TextDisplayBuilder()
               .setContent(
-                `[**${truncateTitle(track.title, 25)}**](${track.uri}) by \` ${cleanAuthorName(track.author)} \`\n` +
-                `-# Position \` #${position} \` • Duration \` ${convertTime(track.length)} \` • By \` ${interaction.user.username} \``
+                `[**${truncateTitle(ftInfo.title, 25)}**](${ftInfo.uri || '#'}) by \` ${cleanAuthorName(ftInfo.author)} \`\n` +
+                `-# Position \` #${position} \` • Duration \` ${convertTime(ftInfo.duration || ftInfo.length)} \` • By \` ${interaction.user.username} \``
               );
 
-            const finalCleanThumb = getCleanThumbnail(track.thumbnail || track.artworkUrl);
+            const finalCleanThumb = getCleanThumbnail(ftInfo.artworkUrl || ftInfo.thumbnail);
             const finalContainer = new ContainerBuilder();
             if (finalCleanThumb) {
               const finalSection = new SectionBuilder()
@@ -993,13 +995,14 @@ module.exports = {
         const titleDisplay = new TextDisplayBuilder()
           .setContent(`### ${client.emoji.check} Track Added`);
 
+        const pInfo = (track.track?.info) || track.track || track;
         const infoDisplay = new TextDisplayBuilder()
           .setContent(
-            `> [**${truncateTitle(track.track.title, 25)}**](${track.track.uri}) by \` ${cleanAuthorName(track.track.author)} \`\n` +
-            `> Position \` #${track.position} \` • Duration \` ${convertTime(track.track.length)} \` • By \` ${message.author.username} \``
+            `> [**${truncateTitle(pInfo.title, 25)}**](${pInfo.uri || '#'}) by \` ${cleanAuthorName(pInfo.author)} \`\n` +
+            `> Position \` #${track.position} \` • Duration \` ${convertTime(pInfo.duration || pInfo.length)} \` • By \` ${message.author.username} \``
           );
 
-        const cleanThumbP = getCleanThumbnail(track.track.thumbnail || track.track.artworkUrl);
+        const cleanThumbP = getCleanThumbnail(pInfo.artworkUrl || pInfo.thumbnail);
         const container = new ContainerBuilder();
         if (cleanThumbP) {
           const section = new SectionBuilder()
@@ -1012,12 +1015,12 @@ module.exports = {
 
         if (track.position > 0) {
           const removeButton = new ButtonBuilder()
-            .setCustomId(`remove_${track.track.identifier}_${track.position}`)
+            .setCustomId(`remove_${pInfo.identifier}_${track.position}`)
             .setLabel('Remove')
             .setStyle(ButtonStyle.Danger);
 
           const playNextButton = new ButtonBuilder()
-            .setCustomId(`playnext_${track.track.identifier}_${track.position}`)
+            .setCustomId(`playnext_${pInfo.identifier}_${track.position}`)
             .setLabel('Play Next')
             .setStyle(ButtonStyle.Success)
             .setDisabled(track.position === 1);
@@ -1129,13 +1132,14 @@ module.exports = {
               const finalTitleDisplay = new TextDisplayBuilder()
                 .setContent(`### ${client.emoji.check} Track Added`);
 
+              const fpInfo = (track.track?.info) || track.track || track;
               const finalInfoDisplay = new TextDisplayBuilder()
                 .setContent(
-                  `> [**${truncateTitle(track.track.title, 25)}**](${track.track.uri}) by \` ${cleanAuthorName(track.track.author)} \`\n` +
-                  `> Position \` #${track.position} \` • Duration \` ${convertTime(track.track.length)} \` • By \` ${message.author.username} \``
+                  `> [**${truncateTitle(fpInfo.title, 25)}**](${fpInfo.uri || '#'}) by \` ${cleanAuthorName(fpInfo.author)} \`\n` +
+                  `> Position \` #${track.position} \` • Duration \` ${convertTime(fpInfo.duration || fpInfo.length)} \` • By \` ${message.author.username} \``
                 );
 
-              const finalCleanThumbP = getCleanThumbnail(track.track.thumbnail || track.track.artworkUrl);
+              const finalCleanThumbP = getCleanThumbnail(fpInfo.artworkUrl || fpInfo.thumbnail);
               const finalContainer = new ContainerBuilder();
               if (finalCleanThumbP) {
                 const finalSection = new SectionBuilder()
