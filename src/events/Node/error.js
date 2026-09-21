@@ -29,7 +29,11 @@ module.exports = {
           if (player.node && player.node.name === name) {
             client.logger.log(`Cleaning up player for guild ${player.guildId} due to session loss`, "warn");
 
-            });
+            try {
+              await player.destroy();
+            } catch (destroyError) {
+              client.logger.log(`Failed to destroy player for guild ${player.guildId}: ${destroyError.message}`, "error");
+            }
 
             if (client.voiceHealthMonitor) {
               client.voiceHealthMonitor.stopMonitoring(player.guildId);
