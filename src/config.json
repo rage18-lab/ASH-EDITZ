@@ -31,13 +31,6 @@
       "port": 443,
       "authorization": "https://seretia.link/discord",
       "secure": true
-    },
-    {
-      "id": "nexcloud",
-      "host": "n4.nexcloud.in",
-      "port": 2007,
-      "authorization": "bluekings",
-      "secure": false
     }
   ],
   "node_options": {
