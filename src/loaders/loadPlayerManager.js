@@ -55,7 +55,7 @@ module.exports = function loadPlayerManager(client) {
     if (!this.nodeManager?.nodes) return { loadType: "empty", tracks: [] };
     const node = [...this.nodeManager.nodes.values()].find(n => n.connected) ||
       [...this.nodeManager.nodes.values()][0];
-    if (!node) return { loadType: "empty", tracks: [] };
+    if (!node || !node.rest) return { loadType: "empty", tracks: [] };
 
     // Handle both call signatures:
     //   manager.search(query, requester, options)  ← direct calls

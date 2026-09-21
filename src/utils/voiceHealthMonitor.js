@@ -19,10 +19,10 @@ class VoiceHealthMonitor {
 
         this.healthChecks.set(player.guildId, interval);
 
-        if (!player.data) {
-            player.data = new Map();
+        if (!player.data || typeof player.data !== 'object') {
+            player.data = {};
         }
-        player.data.set('monitorStartTime', Date.now());
+        player.data.monitorStartTime = Date.now();
     }
 
     stopMonitoring(guildId) {
@@ -33,11 +33,11 @@ class VoiceHealthMonitor {
 
             const player = this.client.manager?.players.get(guildId);
             if (player?.data) {
-                const reconnectTimeout = player.data.get('reconnectTimeout');
+                const reconnectTimeout = player.data.reconnectTimeout;
                 if (reconnectTimeout) {
                     clearTimeout(reconnectTimeout);
-                    player.data.delete('reconnectTimeout');
-                    player.data.delete('reconnectAttempts');
+                    delete player.data.reconnectTimeout;
+                    delete player.data.reconnectAttempts;
                 }
             }
 
@@ -93,8 +93,8 @@ class VoiceHealthMonitor {
                         );
 
                         if (player.data) {
-                            player.data.delete('reconnectAttempts');
-                            player.data.delete('reconnectTimeout');
+                            delete player.data.reconnectAttempts;
+                            delete player.data.reconnectTimeout;
                         }
 
                         return;
@@ -108,15 +108,15 @@ class VoiceHealthMonitor {
                             return;
                         }
 
-                        const attempts = (player.data?.get('reconnectAttempts') || 0) + 1;
-                        player.data?.set('reconnectAttempts', attempts);
+                        const attempts = (player.data?.reconnectAttempts || 0) + 1;
+                        if (player.data) player.data.reconnectAttempts = attempts;
 
                         this.client.logger?.log(
                             `[VoiceHealth] Failed to reconnect 247 player (attempt ${attempts}): ${reconnectError.message}. Retrying in 15s...`,
                             'error'
                         );
 
-                        const existingTimeout = player.data?.get('reconnectTimeout');
+                        const existingTimeout = player.data?.reconnectTimeout;
                         if (existingTimeout) {
                             clearTimeout(existingTimeout);
                         }
@@ -129,7 +129,7 @@ class VoiceHealthMonitor {
                             await this.performHealthCheck(player);
                         }, 15000);
 
-                        player.data?.set('reconnectTimeout', retryTimeout);
+                        if (player.data) player.data.reconnectTimeout = retryTimeout;
 
                         return;
                     }
@@ -177,7 +177,7 @@ class VoiceHealthMonitor {
             }
 
             const isIdle = !player.playing && !player.paused;
-            const lastActivity = player.data?.get('lastActivityTime') || player.data?.get('monitorStartTime') || Date.now();
+            const lastActivity = player.data?.lastActivityTime || player.data?.monitorStartTime || Date.now();
             const idleDuration = Date.now() - lastActivity;
 
             if (isIdle && idleDuration > this.IDLE_THRESHOLD) {
@@ -201,8 +201,8 @@ class VoiceHealthMonitor {
             if (player.playing && player.queue?.current) {
                 if (!player.paused) {
                     const currentPos = player.position || 0;
-                    const lastPos = player.data?.get('lastPosition');
-                    const lastPosUpdate = player.data?.get('lastPositionUpdate') || player.data?.get('monitorStartTime') || Date.now();
+                    const lastPos = player.data?.lastPosition;
+                    const lastPosUpdate = player.data?.lastPositionUpdate || player.data?.monitorStartTime || Date.now();
 
                     if (lastPos !== undefined && lastPos === currentPos && currentPos > 0) {
                         const stalledDuration = Date.now() - lastPosUpdate;
@@ -216,8 +216,7 @@ class VoiceHealthMonitor {
                             setTimeout(() => player.pause(false), 1000);
                         }
                     } else {
-                        player.data?.set('lastPosition', currentPos);
-                        player.data?.set('lastPositionUpdate', Date.now());
+                        if (player.data) { player.data.lastPosition = currentPos; player.data.lastPositionUpdate = Date.now(); }
                     }
                 }
 
@@ -241,7 +240,7 @@ class VoiceHealthMonitor {
 
             if (player && player.voiceId) {
                 try {
-                    player.data?.set('lastActivityTime', Date.now());
+                    if (player.data) player.data.lastActivityTime = Date.now();
 
                     await player.setVoiceChannel(voiceChannel.id);
 
@@ -273,8 +272,7 @@ class VoiceHealthMonitor {
                         'log'
                     );
 
-                    player.data?.delete('lastPosition');
-                    player.data?.delete('lastPositionUpdate');
+                    if (player.data) { delete player.data.lastPosition; delete player.data.lastPositionUpdate; }
 
                 } catch (rejoinError) {
                     if (rejoinError.status === 404 || rejoinError.message?.includes('Session not found')) {
@@ -326,7 +324,7 @@ class VoiceHealthMonitor {
     updateActivity(guildId) {
         const player = this.client.manager?.players.get(guildId);
         if (player?.data) {
-            player.data.set('lastActivityTime', Date.now());
+            player.data.lastActivityTime = Date.now();
         }
     }
 
