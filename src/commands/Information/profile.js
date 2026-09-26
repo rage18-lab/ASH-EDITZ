@@ -70,6 +70,7 @@ module.exports = {
         const statusColor = statusColors[activeStatus] || statusColors.offline;
 
         const profileData = client.db.profiles.get(user.id);
+        const likedData = client.db.liked.get(user.id);
         const npData = client.db.noprefix.getGlobal(user.id);
 
         const dbRank = profileData?.rank ?? "User";

@@ -252,6 +252,45 @@ module.exports = {
       return;
     }
 
+    const player = client.manager.players.get(message.guild.id);
+    if (command.player && !player) {
+      const playerDisplay = new TextDisplayBuilder()
+        .setContent(`**${client.emoji.warn} There is no music player active in this server.**`);
+
+      const container = new ContainerBuilder()
+        .addTextDisplayComponents(playerDisplay);
+
+      return message.channel.send({
+        components: [container],
+        flags: MessageFlags.IsComponentsV2
+      }).catch(() => null);
+    }
+
+    if (command.inVoiceChannel && !message.member.voice.channel) {
+      const vcDisplay = new TextDisplayBuilder()
+        .setContent(`**${client.emoji.warn} You must be in a voice channel to use this command.**`);
+
+      const container = new ContainerBuilder()
+        .addTextDisplayComponents(vcDisplay);
+
+      return message.channel.send({
+        components: [container],
+        flags: MessageFlags.IsComponentsV2
+      }).catch(() => null);
+    }
+
+    if (command.sameVoiceChannel && player && message.member.voice.channel.id !== player.voiceId) {
+      const sameVcDisplay = new TextDisplayBuilder()
+        .setContent(`**${client.emoji.warn} You must be in the same voice channel as me.**`);
+
+      const container = new ContainerBuilder()
+        .addTextDisplayComponents(sameVcDisplay);
+
+      return message.channel.send({
+        components: [container],
+        flags: MessageFlags.IsComponentsV2
+      }).catch(() => null);
+    }
 
     try {
       await command.execute(message, args, client, prefix);

@@ -88,7 +88,91 @@ module.exports = {
         }
       }
 
+      const player = interaction.client.manager.players.get(
+        interaction.guildId,
+      );
+      if (command.player && !player) {
+        const errorDisplay = new TextDisplayBuilder()
+          .setContent(`**${client.emoji.warn} There is no player for this guild.**`);
 
+        const container = new ContainerBuilder()
+          .addTextDisplayComponents(errorDisplay);
+
+        if (interaction.replied) {
+          return await interaction
+            .editReply({
+              components: [container],
+              flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
+            })
+            .catch(() => { });
+        } else {
+          return await interaction
+            .reply({
+              components: [container],
+              flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
+            })
+            .catch(() => { });
+        }
+      }
+      if (command.inVoiceChannel && !interaction.member.voice.channel) {
+        const errorDisplay = new TextDisplayBuilder()
+          .setContent(`**${client.emoji.warn} You must be in a voice channel.**`);
+
+        const container = new ContainerBuilder()
+          .addTextDisplayComponents(errorDisplay);
+
+        if (interaction.replied) {
+          return await interaction
+            .editReply({
+              components: [container],
+              flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
+            })
+            .catch(() => { });
+        } else {
+          return await interaction
+            .reply({
+              components: [container],
+              flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
+            })
+            .catch(() => { });
+        }
+      }
+      if (command.sameVoiceChannel) {
+        if (!interaction.guild || !interaction.guild.members.me) {
+          const errorDisplay = new TextDisplayBuilder()
+            .setContent(`**${client.emoji.warn} An error occurred. It seems the bot is not properly connected to the guild.**`);
+
+          const container = new ContainerBuilder()
+            .addTextDisplayComponents(errorDisplay);
+
+          return await interaction
+            .reply({
+              components: [container],
+              flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
+            })
+            .catch(() => { });
+        }
+
+        const botVoiceChannel = interaction.guild.members.me.voice.channel;
+        const userVoiceChannel = interaction.member.voice.channel;
+
+        if (botVoiceChannel) {
+          if (userVoiceChannel !== botVoiceChannel) {
+            const errorDisplay = new TextDisplayBuilder()
+              .setContent(`**${client.emoji.warn} You must be in the same ${botVoiceChannel.toString()} to use this command.**`);
+
+            const container = new ContainerBuilder()
+              .addTextDisplayComponents(errorDisplay);
+
+            return await interaction
+              .reply({
+                components: [container],
+                flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
+              })
+              .catch(() => { });
+          }
+        }
+      }
 
       try {
         const interactionWrapper = {
@@ -283,6 +367,13 @@ module.exports = {
         }
       }
 
+      const data = client.db.setup.get(interaction.guildId);
+      if (
+        data &&
+        interaction.channelId === data.channelId &&
+        interaction.message.id === data.messageId
+      )
+        return client.emit("playerButtons", interaction, data);
     }
   },
 };

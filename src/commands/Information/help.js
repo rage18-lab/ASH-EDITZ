@@ -18,6 +18,14 @@ const categoryInfo = {
         emoji: '<:icon_2:1490275264263880734>',
         description: 'Shows information commands'
     },
+    'Music': {
+        emoji: '<:muscik:1490275609975328779>',
+        description: 'Shows music commands'
+    },
+    'Favourite': {
+        emoji: '<:icon_11:1490275358443044924>',
+        description: 'Shows favourite commands'
+    },
     'Config': {
         emoji: '<:geea:1490275618406006866>',
         description: 'Shows configuration commands'
@@ -25,6 +33,10 @@ const categoryInfo = {
     'Utility': {
         emoji: '<:bosz:1490275627406725252>',
         description: 'Shows utility commands'
+    },
+    'Filters': {
+        emoji: '<:floil:1490275636823195718>',
+        description: 'Shows filter commands'
     },
     'Tracker': {
         emoji: '<:tradu:1490275644960018435>',
@@ -37,10 +49,14 @@ const categoryInfo = {
     'Automod': {
         emoji: '<:autoss:1490299455293882454>',
         description: 'Shows automod commands'
+    },
+    'Voice': {
+        emoji: `${emoji.volup}`,
+        description: 'Shows voice commands'
     }
 };
 
-const categoryOrder = ['Information', 'Config', 'Moderation', 'Automod', 'Utility', 'Tracker'];
+const categoryOrder = ['Information', 'Music', 'Favourite', 'Config', 'Moderation', 'Automod', 'Voice', 'Utility', 'Filters', 'Tracker'];
 
 module.exports = {
     name: 'help',
@@ -268,7 +284,7 @@ module.exports = {
 
         const separator = new SeparatorBuilder();
 
-        const descriptionText = `**${botName}** is your ultimate multi-purpose companion. Featuring advanced **Moderation**, **Utility**, **Invites**, and more—all designed to elevate your server experience to the next level.`;
+        const descriptionText = `**${botName}** is your ultimate multi-purpose companion, offering high-fidelity music from **YT Music**,**Spotify**,**Apple Music** and more. Featuring advanced **Moderation**, **Utility**, **Invites**, and more—all designed to elevate your server experience to the next level.`;
 
         const descriptionDisplay = new TextDisplayBuilder()
             .setContent(descriptionText);
@@ -610,7 +626,7 @@ module.exports = {
 
         const separator = new SeparatorBuilder();
 
-        const descriptionText = `**${botName}** is your ultimate multi-purpose companion. Featuring advanced **Moderation**, **Utility**, **Invites**, and more—all designed to elevate your server experience to the next level.`;
+        const descriptionText = `**${botName}** is your ultimate multi-purpose companion, offering high-fidelity music from **YT Music**,**Spotify**,**Apple Music** and more. Featuring advanced **Moderation**, **Utility**, **Invites**, and more—all designed to elevate your server experience to the next level.`;
 
         const descriptionDisplay = new TextDisplayBuilder()
             .setContent(descriptionText);

@@ -1,5 +1,6 @@
 const {
-  EmbedBuilder,
+  ContainerBuilder,
+  TextDisplayBuilder,
   MessageFlags
 } = require("discord.js");
 
@@ -29,16 +30,19 @@ const cleanExpiredPermissions = async (client) => {
       try {
         const user = await client.users.fetch(userId);
         if (user) {
-          const expiredDisplay = new EmbedBuilder()
-            .setColor(client?.config?.color || "#00D4FF")
-            .setDescription(
+          const expiredDisplay = new TextDisplayBuilder()
+            .setContent(
               `**${client.emoji.info} Your Global No-Prefix Access has expired.**\n\n` +
               `You no longer have permission to use commands without a prefix.\n` +
               `If you need continued access, please contact the bot owner.`
             );
 
+          const container = new ContainerBuilder()
+            .addTextDisplayComponents(expiredDisplay);
+
           await user.send({
-            embeds: [expiredDisplay]
+            components: [container],
+            flags: MessageFlags.IsComponentsV2
           });
 
           notifiedUsers.add(userId);

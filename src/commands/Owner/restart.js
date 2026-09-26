@@ -21,7 +21,10 @@ module.exports = {
   async slashExecute(interaction, client) {
     if (!client.owners.includes(interaction.user.id)) return;
 
-    const confirmMessage = `**${client.emoji.info} Are you sure you want to restart?**`;
+    const playingGuildsCount = [...client.manager.players.values()].filter(p => p.playing).length;
+    const confirmMessage = playingGuildsCount === 0
+      ? `**${client.emoji.warn} The bot is not playing anywhere.**\n**${client.emoji.info} Are you sure you want to restart?**`
+      : `**${client.emoji.warn} The bot is currently active in \`${playingGuildsCount}\` servers.**\n**${client.emoji.info} Are you sure you want to restart?**`;
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -83,7 +86,10 @@ module.exports = {
   async execute(message, args, client) {
     if (!client.owners.includes(message.author.id)) return;
 
-    const confirmMessage = `**${client.emoji.info} Are you sure you want to restart?**`;
+    const playingGuildsCount = [...client.manager.players.values()].filter(p => p.playing).length;
+    const confirmMessage = playingGuildsCount === 0
+      ? `**${client.emoji.warn} The bot is not playing anywhere.**\n**${client.emoji.info} Are you sure you want to restart?**`
+      : `**${client.emoji.warn} The bot is currently active in \`${playingGuildsCount}\` servers.**\n**${client.emoji.info} Are you sure you want to restart?**`;
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
