@@ -142,9 +142,7 @@ module.exports = {
                     slashExecute: command.slashExecute,
                     autocomplete: command.autocomplete,
                     run: command.run,
-                    player: command.player,
-                    inVoiceChannel: command.inVoiceChannel,
-                    sameVoiceChannel: command.sameVoiceChannel,
+
                     botPerms: command.botPerms,
                     userPerms: command.userPerms,
                     owner: command.owner || false,
@@ -159,7 +157,7 @@ module.exports = {
           }
         }
 
-        const eventDirs = ["Client", "Node", "Players"];
+        const eventDirs = ["Client"];
         for (const dir of eventDirs) {
           const evPath = path.join(process.cwd(), `src/events/${dir}`);
           if (fs.existsSync(evPath)) {
@@ -222,9 +220,7 @@ module.exports = {
           slashExecute: newCmd.slashExecute,
           autocomplete: newCmd.autocomplete,
           run: newCmd.run,
-          player: newCmd.player,
-          inVoiceChannel: newCmd.inVoiceChannel,
-          sameVoiceChannel: newCmd.sameVoiceChannel,
+
           botPerms: newCmd.botPerms,
           userPerms: newCmd.userPerms,
           owner: newCmd.owner || false,

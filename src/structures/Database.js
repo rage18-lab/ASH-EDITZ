@@ -177,15 +177,6 @@ function _buildManagers() {
         }
     };
 
-    // ── liked ─────────────────────────────────────────────────────────────────
-    managers.liked = {
-        get: (userId) => {
-            const row = sqlGet('SELECT * FROM liked WHERE userId = ?', [userId]);
-            return row ? deserialize(row.songs) : [];
-        },
-        set: (userId, songs) =>
-            sqlRun('INSERT OR REPLACE INTO liked (userId, songs) VALUES (?, ?)', [userId, serialize(songs)])
-    };
 
     // ── noprefix ──────────────────────────────────────────────────────────────
     managers.noprefix = {
@@ -315,8 +306,6 @@ function _buildManagers() {
 
     // ── simple generic managers ───────────────────────────────────────────────
     managers.userpreferences = createManager('userpreferences', 'userId');
-    managers.setup           = createManager('setup',           'guildId');
-    managers.twofourseven    = createManager('twofourseven',    'guildId');
 
     // ── autorole ──────────────────────────────────────────────────────────────
     managers.autorole = {
@@ -331,29 +320,8 @@ function _buildManagers() {
             sqlRun('DELETE FROM autorole WHERE guildId = ?', [guildId])
     };
 
-    // ── voicerole / vcstatus / reboot ─────────────────────────────────────────
-    managers.voicerole = createManager('voicerole', 'guildId');
-    managers.vcstatus  = createManager('vcstatus',  'guildId');
+    // ── reboot ─────────────────────────────────────────
     managers.reboot    = createManager('reboot',    'id');
-
-    // ── musicStats ────────────────────────────────────────────────────────────
-    managers.musicStats = {
-        get: (userId) =>
-            sqlGet('SELECT * FROM music_stats WHERE userId = ?', [userId])
-            || { userId, songsPlayed: 0, lastSong: '' },
-        increment: (userId, songTitle = '') => {
-            const exists = sqlGet('SELECT 1 FROM music_stats WHERE userId = ?', [userId]);
-            if (exists) {
-                sqlRun('UPDATE music_stats SET songsPlayed = songsPlayed + 1, lastSong = ? WHERE userId = ?',
-                    [songTitle, userId]);
-            } else {
-                sqlRun('INSERT INTO music_stats (userId, songsPlayed, lastSong) VALUES (?, 1, ?)',
-                    [userId, songTitle]);
-            }
-        },
-        getTopUsers: (limit = 10) =>
-            sqlAll('SELECT * FROM music_stats ORDER BY songsPlayed DESC LIMIT ?', [limit])
-    };
 
     // ── rankPermissions ───────────────────────────────────────────────────────
     managers.rankPermissions = {
@@ -430,7 +398,6 @@ async function initDatabase() {
                 allowedCommands TEXT DEFAULT '[]'
             `
         },
-        { name: 'liked',           schema: `userId TEXT PRIMARY KEY, songs TEXT DEFAULT '[]'` },
         {
             name: 'noprefix',
             schema: `
@@ -455,19 +422,8 @@ async function initDatabase() {
             schema: `guildId TEXT, channelId TEXT, PRIMARY KEY (guildId, channelId)`
         },
         { name: 'userpreferences', schema: `userId TEXT PRIMARY KEY, musicSource TEXT DEFAULT 'ytmsearch'` },
-        {
-            name: 'setup',
-            schema: `guildId TEXT PRIMARY KEY, channelId TEXT, messageId TEXT, voiceChannelId TEXT`
-        },
-        { name: 'twofourseven',    schema: `guildId TEXT PRIMARY KEY, textId TEXT, voiceId TEXT` },
         { name: 'autorole',        schema: `guildId TEXT PRIMARY KEY, roles TEXT DEFAULT '[]'` },
-        { name: 'voicerole',       schema: `guildId TEXT PRIMARY KEY, roleId TEXT, voiceChannelId TEXT` },
-        { name: 'vcstatus',        schema: `guildId TEXT PRIMARY KEY, status TEXT` },
-        { name: 'reboot',          schema: `id TEXT PRIMARY KEY, channelId TEXT, messageId TEXT, guildId TEXT` },
-        {
-            name: 'music_stats',
-            schema: `userId TEXT PRIMARY KEY, songsPlayed INTEGER DEFAULT 0, lastSong TEXT DEFAULT ''`
-        }
+        { name: 'reboot',          schema: `id TEXT PRIMARY KEY, channelId TEXT, messageId TEXT, guildId TEXT` }
     ];
 
     tables.forEach(table => {
@@ -497,17 +453,12 @@ async function initDatabase() {
     // ── Indexes ───────────────────────────────────────────────────────────────
     [
         'CREATE INDEX IF NOT EXISTS idx_profiles_userId          ON profiles(userId)',
-        'CREATE INDEX IF NOT EXISTS idx_liked_userId             ON liked(userId)',
         'CREATE INDEX IF NOT EXISTS idx_noprefix_userId_guildId  ON noprefix(userId, guildId)',
         'CREATE INDEX IF NOT EXISTS idx_blacklist_userId         ON blacklist(userId)',
         'CREATE INDEX IF NOT EXISTS idx_prefixes_guildId         ON prefixes(guildId)',
         'CREATE INDEX IF NOT EXISTS idx_ignorechannels_guildId   ON ignorechannels(guildId)',
         'CREATE INDEX IF NOT EXISTS idx_userpreferences_userId   ON userpreferences(userId)',
-        'CREATE INDEX IF NOT EXISTS idx_setup_guildId            ON setup(guildId)',
-        'CREATE INDEX IF NOT EXISTS idx_twofourseven_guildId     ON twofourseven(guildId)',
-        'CREATE INDEX IF NOT EXISTS idx_autorole_guildId         ON autorole(guildId)',
-        'CREATE INDEX IF NOT EXISTS idx_voicerole_guildId        ON voicerole(guildId)',
-        'CREATE INDEX IF NOT EXISTS idx_vcstatus_guildId         ON vcstatus(guildId)'
+        'CREATE INDEX IF NOT EXISTS idx_autorole_guildId         ON autorole(guildId)'
     ].forEach(idx => db.run(idx));
 
     // Flush any DDL changes immediately

@@ -7,7 +7,6 @@
     "dev": "nodemon --no-warnings shard.js"
   },
   "dependencies": {
-    "@discordjs/voice": "^0.17.0",
     "@flytri/lyrics-finder": "^1.0.7",
     "@iamtraction/google-translate": "^2.0.1",
     "@napi-rs/canvas": "^0.1.77",
@@ -23,7 +22,6 @@
     "dokdo": "latest",
     "dotenv": "^16.4.7",
     "groq-sdk": "^1.6.0",
-    "lavalink-client": "^2.11.0",
     "moment": "^2.30.1",
     "moment-duration-format": "^2.3.2",
     "moment-timezone": "^0.5.48",
