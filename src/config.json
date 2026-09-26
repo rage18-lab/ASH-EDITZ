@@ -35,9 +35,9 @@
     {
       "id": "serenetia",
       "host": "lavalinkv4.serenetia.com",
-      "port": 80,
-      "authorization": "https://seretia.link/discord",
-      "secure": false
+      "port": 443,
+      "authorization": "https://dsc.gg/ajidevserver",
+      "secure": true
     },
     {
       "id": "g3v",
