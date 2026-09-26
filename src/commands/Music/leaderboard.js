@@ -1,15 +1,13 @@
 const {
-  ContainerBuilder,
-  TextDisplayBuilder,
-  SeparatorBuilder,
-  MessageFlags,
+  EmbedBuilder,
+  
 } = require("discord.js");
 
 const medals = ["🥇", "🥈", "🥉"];
 
 module.exports = {
   name: "lb",
-  category: "Information",
+  category: "Music",
   description: "Show the music leaderboard — top users by songs played",
   args: false,
   usage: "",
@@ -40,13 +38,12 @@ module.exports = {
     }
 
     if (!topUsers || topUsers.length === 0) {
-      const emptyDisplay = new TextDisplayBuilder()
-        .setContent(
+      const embed = new EmbedBuilder().setDescription(
           `### ${client.emoji.info} Music Leaderboard\n` +
           `> No songs have been played yet. Start playing music to appear on the leaderboard!`
-        );
-      const container = new ContainerBuilder().addTextDisplayComponents(emptyDisplay);
-      return message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
+        ).setColor(client.config.color || "#00D4FF");
+      
+      return message.reply({ embeds: [embed] });
     }
 
     // Resolve usernames from Discord
@@ -85,28 +82,17 @@ module.exports = {
       }
     } catch (_) {}
 
-    const titleDisplay = new TextDisplayBuilder()
-      .setContent(`### ${client.emoji.hastag} Music Leaderboard — Top Listeners`);
+    const embed = new EmbedBuilder().setTitle(`${client.emoji.hastag} Music Leaderboard — Top Listeners`).setColor(client.config.color || "#00D4FF");
 
-    const sep = new SeparatorBuilder();
+    
 
-    const boardDisplay = new TextDisplayBuilder()
-      .setContent(rows.join("\n") + callerRankText);
+    embed.setDescription(rows.join("\n") + callerRankText);
 
-    const footerDisplay = new TextDisplayBuilder()
-      .setContent(`-# ${client.emoji.info} Stats update every time a song starts playing.`);
+    embed.setFooter({ text: "Stats update every time a song starts playing." });
 
-    const container = new ContainerBuilder()
-      .addTextDisplayComponents(titleDisplay)
-      .addSeparatorComponents(sep)
-      .addTextDisplayComponents(boardDisplay)
-      .addSeparatorComponents(new SeparatorBuilder())
-      .addTextDisplayComponents(footerDisplay);
+    
 
-    return message.reply({
-      components: [container],
-      flags: MessageFlags.IsComponentsV2,
-    });
+    return message.reply({ embeds: [embed] });
   },
 };
 

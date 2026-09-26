@@ -149,7 +149,9 @@ module.exports = {
           volume: 80,
           deaf: true,
         });
-      }
+          await player.connect();
+ await player.connect();
+}
 
       // Pick random queries from the vibe list to search
       const shuffled = [...vibe.queries].sort(() => Math.random() - 0.5);

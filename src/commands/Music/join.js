@@ -69,7 +69,7 @@ module.exports = {
       });
     }
 
-    await client.manager.createPlayer({
+    player = await client.manager.createPlayer({
       guildId: interaction.guild.id,
       voiceId: interaction.member.voice.channel.id,
       textId: interaction.channel.id,
@@ -77,6 +77,7 @@ module.exports = {
       deaf: true,
       mute: false,
     });
+    await player.connect();
 
     const successDisplay = new TextDisplayBuilder()
       .setContent(`**${client.emoji.check} Joined <#${channel.id}> and bound to <#${interaction.channel.id}>**`);
@@ -135,7 +136,7 @@ module.exports = {
       });
     }
 
-    await client.manager.createPlayer({
+    player = await client.manager.createPlayer({
       guildId: message.guild.id,
       voiceId: message.member.voice.channel.id,
       textId: message.channel.id,
@@ -143,6 +144,7 @@ module.exports = {
       deaf: true,
       mute: false,
     });
+    await player.connect();
 
     const successDisplay = new TextDisplayBuilder()
       .setContent(

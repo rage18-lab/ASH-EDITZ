@@ -83,7 +83,9 @@ module.exports = {
                 volume: 80,
                 deaf: true,
             });
-        }
+          await player.connect();
+ await player.connect();
+}
 
         const nodes = client.manager.nodeManager?.nodes;
         const node = nodes ? [...nodes.values()].find(n => n.connected) || [...nodes.values()][0] : null;

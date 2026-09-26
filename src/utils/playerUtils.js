@@ -62,8 +62,9 @@ async function recreatePlayer(client, guildId, voiceId, textId) {
             volume: 80,
             deaf: true,
         });
-
-        if (!newPlayer) {
+        await newPlayer.connect();
+ await newPlayer.connect();
+if (!newPlayer) {
             throw new Error("lavalink-client failed to create a new player object");
         }
 

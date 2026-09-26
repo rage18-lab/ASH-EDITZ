@@ -141,7 +141,9 @@ module.exports = {
                     volume: 80,
                     deaf: true,
                 });
-            }
+          await player.connect();
+ await player.connect();
+}
 
             let searchEngine = client.config.node_source || 'ytmsearch';
             try {

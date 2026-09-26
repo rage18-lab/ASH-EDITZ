@@ -1,9 +1,5 @@
 const {
-  ContainerBuilder,
-  TextDisplayBuilder,
-  SectionBuilder,
-  ThumbnailBuilder,
-  SeparatorBuilder,
+  EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
@@ -117,15 +113,12 @@ module.exports = {
     await interaction.deferReply();
 
     if (!interaction.member?.voice?.channel) {
-      const errorDisplay = new TextDisplayBuilder()
-        .setContent(`**${client.emoji.warn} You need to be in a voice channel first.**`);
+      const errorDisplay = new EmbedBuilder().setDescription(`**${client.emoji.warn} You need to be in a voice channel first.**`).setColor(client.config.color || "#00D4FF");
 
-      const container = new ContainerBuilder()
-        .addTextDisplayComponents(errorDisplay);
+      const container = [errorDisplay];
 
       return interaction.editReply({
-        components: [container],
-        flags: MessageFlags.IsComponentsV2
+        embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
       });
     }
 
@@ -135,15 +128,12 @@ module.exports = {
       PermissionsBitField.Flags.Connect,
       PermissionsBitField.Flags.Speak,
     ])) {
-      const errorDisplay = new TextDisplayBuilder()
-        .setContent(`**${client.emoji.warn} I don't have enough permissions! Please give me \`CONNECT\` and \`SPEAK\`.**`);
+      const errorDisplay = new EmbedBuilder().setDescription(`**${client.emoji.warn} I don't have enough permissions! Please give me \`CONNECT\` and \`SPEAK\`.**`).setColor(client.config.color || "#00D4FF");
 
-      const container = new ContainerBuilder()
-        .addTextDisplayComponents(errorDisplay);
+      const container = [errorDisplay];
 
       return interaction.editReply({
-        components: [container],
-        flags: MessageFlags.IsComponentsV2
+        embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
       });
     }
 
@@ -151,15 +141,12 @@ module.exports = {
       const { waitForNodeConnection, hasAvailableNodes } = require("../../utils/nodeUtils");
 
       if (!hasAvailableNodes(client.manager)) {
-        const errorDisplay = new TextDisplayBuilder()
-          .setContent(`**${client.emoji.cross} The music server is currently unavailable. Please try again later.**`);
+        const errorDisplay = new EmbedBuilder().setDescription(`**${client.emoji.cross} The music server is currently unavailable. Please try again later.**`).setColor(client.config.color || "#00D4FF");
 
-        const container = new ContainerBuilder()
-          .addTextDisplayComponents(errorDisplay);
+        const container = [errorDisplay];
 
         return interaction.editReply({
-          components: [container],
-          flags: MessageFlags.IsComponentsV2
+          embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
         });
       }
 
@@ -183,8 +170,8 @@ module.exports = {
             volume: 80,
             deaf: true,
           });
-
-        } catch (createError) {
+          await player.connect();
+} catch (createError) {
           console.error("Player creation error:", createError);
           console.log(`Attempting automated fix for guild ${interaction.guild.id}...`);
 
@@ -214,20 +201,18 @@ module.exports = {
               volume: 80,
               deaf: true,
             });
-          } else if (botActualChannelId === channel.id) {
+          await player.connect();
+} else if (botActualChannelId === channel.id) {
             // Bot is already in the user's channel — just update player voiceId
             player.voiceId = channel.id;
           } else {
             // Bot is truly in a different active channel
-            const errorDisplay = new TextDisplayBuilder()
-              .setContent(`**${client.emoji.warn} I'm already connected to a different voice channel.**`);
+            const errorDisplay = new EmbedBuilder().setDescription(`**${client.emoji.warn} I'm already connected to a different voice channel.**`).setColor(client.config.color || "#00D4FF");
 
-            const container = new ContainerBuilder()
-              .addTextDisplayComponents(errorDisplay);
+            const container = [errorDisplay];
 
             return interaction.editReply({
-              components: [container],
-              flags: MessageFlags.IsComponentsV2
+              embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
             });
           }
         }
@@ -265,15 +250,12 @@ module.exports = {
       }
 
       if (!searchResult || !searchResult.tracks || !searchResult.tracks.length) {
-        const errorDisplay = new TextDisplayBuilder()
-          .setContent(`**${client.emoji.cross} No results found for "${query}"**`);
+        const errorDisplay = new EmbedBuilder().setDescription(`**${client.emoji.cross} No results found for "${query}"**`).setColor(client.config.color || "#00D4FF");
 
-        const container = new ContainerBuilder()
-          .addTextDisplayComponents(errorDisplay);
+        const container = [errorDisplay];
 
         return interaction.editReply({
-          components: [container],
-          flags: MessageFlags.IsComponentsV2
+          embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
         });
       }
 
@@ -308,15 +290,12 @@ module.exports = {
           }
         }
 
-        const successDisplay = new TextDisplayBuilder()
-          .setContent(`**${client.emoji.check} Queued \`${searchResult.tracks.length}\` tracks from \`${searchResult.playlistName}\`**`);
+        const successDisplay = new EmbedBuilder().setDescription(`**${client.emoji.check} Queued \`${searchResult.tracks.length}\` tracks from \`${searchResult.playlistName}\`**`).setColor(client.config.color || "#00D4FF");
 
-        const container = new ContainerBuilder()
-          .addTextDisplayComponents(successDisplay);
+        const container = [successDisplay];
 
         return interaction.editReply({
-          components: [container],
-          flags: MessageFlags.IsComponentsV2
+          embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
         });
       }
 
@@ -383,8 +362,7 @@ module.exports = {
         return client.emoji.dot;
       };
 
-      const titleDisplay = new TextDisplayBuilder()
-        .setContent(`### ${client.emoji.check} Track Added`);
+      
 
       const tInfo = track.info || track;
       const infoDisplay = new TextDisplayBuilder()
@@ -394,15 +372,11 @@ module.exports = {
         );
 
       const cleanThumb = getCleanThumbnail(tInfo.artworkUrl || tInfo.thumbnail);
-      const container = new ContainerBuilder();
+      const container = new EmbedBuilder().setColor(client.config.color || "#00D4FF");
+            const finalContainer = container;
 
       if (cleanThumb) {
-        const section = new SectionBuilder()
-          .addTextDisplayComponents(titleDisplay, infoDisplay)
-          .setThumbnailAccessory((t) => t.setURL(cleanThumb));
-        container.addSectionComponents(section);
-      } else {
-        container.addTextDisplayComponents(titleDisplay, infoDisplay);
+        container.setThumbnail(cleanThumb);
       }
 
       if (position > 0) {
@@ -420,15 +394,13 @@ module.exports = {
         const buttonRow = new ActionRowBuilder()
           .addComponents(removeButton, playNextButton);
 
-        container.addSeparatorComponents(new SeparatorBuilder());
-        container.addActionRowComponents(buttonRow);
+        /* No separator needed */
       }
 
       let replyMsg;
       try {
         replyMsg = await interaction.editReply({
-          components: [container],
-          flags: MessageFlags.IsComponentsV2
+          embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
         });
       } catch (editError) {
         if (editError.code === 50027 || editError.code === 10008 || editError.message?.includes('Invalid Webhook Token')) {
@@ -436,8 +408,7 @@ module.exports = {
             const channel = client.channels.cache.get(interaction.channel.id);
             if (channel) {
               replyMsg = await channel.send({
-                components: [container],
-                flags: MessageFlags.IsComponentsV2
+                embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
               });
             }
           } catch (sendError) {
@@ -476,17 +447,14 @@ module.exports = {
                 const removedTrack = player.queue[trackIndex];
                 player.queue.splice(trackIndex, 1);
 
-                const updatedDisplay = new TextDisplayBuilder()
-                  .setContent(`**${client.emoji.check} Removed [${truncateTitle(removedTrack.title, 25)}](${removedTrack.uri}) from queue.**`);
+                const updatedDisplay = new EmbedBuilder().setDescription(`**${client.emoji.check} Removed [${truncateTitle(removedTrack.title, 25)}](${removedTrack.uri}) from queue.**`).setColor(client.config.color || "#00D4FF");
 
-                const updatedContainer = new ContainerBuilder()
-                  .addTextDisplayComponents(updatedDisplay);
+                const updatedContainer = [updatedDisplay];
 
                 await buttonInteraction.deferUpdate().catch(() => { });
 
                 await buttonInteraction.message.edit({
-                  components: [updatedContainer],
-                  flags: MessageFlags.IsComponentsV2
+                  embeds: updatedContainer
                 }).catch(() => { });
 
                 buttonInteraction.message.actionTaken = true;
@@ -508,17 +476,14 @@ module.exports = {
                 player.queue.splice(trackIndex, 1);
                 player.queue.unshift(trackToMove);
 
-                const updatedDisplay = new TextDisplayBuilder()
-                  .setContent(`**${client.emoji.check} Moved [${truncateTitle(trackToMove.title, 25)}](${trackToMove.uri}) to next in queue.**`);
+                const updatedDisplay = new EmbedBuilder().setDescription(`**${client.emoji.check} Moved [${truncateTitle(trackToMove.title, 25)}](${trackToMove.uri}) to next in queue.**`).setColor(client.config.color || "#00D4FF");
 
-                const updatedContainer = new ContainerBuilder()
-                  .addTextDisplayComponents(updatedDisplay);
+                const updatedContainer = [updatedDisplay];
 
                 await buttonInteraction.deferUpdate().catch(() => { });
 
                 await buttonInteraction.message.edit({
-                  components: [updatedContainer],
-                  flags: MessageFlags.IsComponentsV2
+                  embeds: updatedContainer
                 }).catch(() => { });
 
                 buttonInteraction.message.actionTaken = true;
@@ -533,8 +498,7 @@ module.exports = {
 
         collector.on('end', () => {
           if (replyMsg && !replyMsg.deleted && !replyMsg.actionTaken) {
-            const finalTitleDisplay = new TextDisplayBuilder()
-              .setContent(`### ${client.emoji.check} Track Added`);
+            const finalTitleDisplay = new EmbedBuilder().setDescription(`### ${client.emoji.check} Track Added`).setColor(client.config.color || "#00D4FF");
 
             const ftInfo = track.info || track;
             const finalInfoDisplay = new TextDisplayBuilder()
@@ -547,16 +511,15 @@ module.exports = {
             const finalContainer = new ContainerBuilder();
             if (finalCleanThumb) {
               const finalSection = new SectionBuilder()
-                .addTextDisplayComponents(finalTitleDisplay, finalInfoDisplay)
+                /* removed */(finalTitleDisplay, finalInfoDisplay)
                 .setThumbnailAccessory((t) => t.setURL(finalCleanThumb));
-              finalContainer.addSectionComponents(finalSection);
+              finalContainer/* removed */(finalSection);
             } else {
-              finalContainer.addTextDisplayComponents(finalTitleDisplay, finalInfoDisplay);
+              finalContainer/* removed */(finalTitleDisplay, finalInfoDisplay);
             }
 
             replyMsg.edit({
-              components: [finalContainer],
-              flags: MessageFlags.IsComponentsV2
+              embeds: [finalContainer]
             }).catch(() => { });
           }
         });
@@ -579,22 +542,18 @@ module.exports = {
         errorMessage = `An error occurred: ${error.message}`;
       }
 
-      const errorDisplay = new TextDisplayBuilder()
-        .setContent(`**${client.emoji.cross} ${errorMessage}**`);
+      const errorDisplay = new EmbedBuilder().setDescription(`**${client.emoji.cross} ${errorMessage}**`).setColor(client.config.color || "#00D4FF");
 
-      const container = new ContainerBuilder()
-        .addTextDisplayComponents(errorDisplay);
+      const container = [errorDisplay];
 
       try {
         if (!interaction.deferred && !interaction.replied) {
           await interaction.reply({
-            components: [container],
-            flags: MessageFlags.IsComponentsV2
+            embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
-            components: [container],
-            flags: MessageFlags.IsComponentsV2
+            embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
           });
         }
       } catch (replyError) {
@@ -603,8 +562,7 @@ module.exports = {
             const channel = client.channels.cache.get(interaction.channel.id);
             if (channel) {
               await channel.send({
-                components: [container],
-                flags: MessageFlags.IsComponentsV2
+                embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
               });
             }
           } catch (channelError) {
@@ -660,32 +618,26 @@ module.exports = {
           `**${client.emoji.dot} Example** \`:\` \`${prefix}play imagine dragons believer\``
         );
 
-      const container = new ContainerBuilder()
-        .addTextDisplayComponents(usageDisplay);
+      const container = [usageDisplay];
 
       return message.channel.send({
-        components: [container],
-        flags: MessageFlags.IsComponentsV2
+        embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
       });
     }
 
     const channel = message.member.voice.channel;
     if (!channel) {
-      const errorDisplay = new TextDisplayBuilder()
-        .setContent(`**${client.emoji.warn} You need to be in a voice channel first.**`);
+      const errorDisplay = new EmbedBuilder().setDescription(`**${client.emoji.warn} You need to be in a voice channel first.**`).setColor(client.config.color || "#00D4FF");
 
-      const container = new ContainerBuilder()
-        .addTextDisplayComponents(errorDisplay);
+      const container = [errorDisplay];
 
       try {
         return await message.reply({
-          components: [container],
-          flags: MessageFlags.IsComponentsV2
+          embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
         });
       } catch (e) {
         return await message.channel.send({
-          components: [container],
-          flags: MessageFlags.IsComponentsV2
+          embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
         }).catch(() => null);
       }
     }
@@ -696,21 +648,17 @@ module.exports = {
         PermissionsBitField.Flags.Speak,
       ])
     ) {
-      const errorDisplay = new TextDisplayBuilder()
-        .setContent(`**${client.emoji.warn} I don't have enough permissions! Please give me \`CONNECT\` and \`SPEAK\`.**`);
+      const errorDisplay = new EmbedBuilder().setDescription(`**${client.emoji.warn} I don't have enough permissions! Please give me \`CONNECT\` and \`SPEAK\`.**`).setColor(client.config.color || "#00D4FF");
 
-      const container = new ContainerBuilder()
-        .addTextDisplayComponents(errorDisplay);
+      const container = [errorDisplay];
 
       try {
         return await message.reply({
-          components: [container],
-          flags: MessageFlags.IsComponentsV2
+          embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
         });
       } catch (e) {
         return await message.channel.send({
-          components: [container],
-          flags: MessageFlags.IsComponentsV2
+          embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
         }).catch(() => null);
       }
     }
@@ -721,15 +669,12 @@ module.exports = {
       const { waitForNodeConnection, hasAvailableNodes } = require("../../utils/nodeUtils");
 
       if (!hasAvailableNodes(client.manager)) {
-        const errorDisplay = new TextDisplayBuilder()
-          .setContent(`**${client.emoji.cross} The music server is currently unavailable. Please try again later.**`);
+        const errorDisplay = new EmbedBuilder().setDescription(`**${client.emoji.cross} The music server is currently unavailable. Please try again later.**`).setColor(client.config.color || "#00D4FF");
 
-        const container = new ContainerBuilder()
-          .addTextDisplayComponents(errorDisplay);
+        const container = [errorDisplay];
 
         return message.reply({
-          components: [container],
-          flags: MessageFlags.IsComponentsV2
+          embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
         });
       }
 
@@ -752,8 +697,8 @@ module.exports = {
             volume: 80,
             deaf: true,
           });
-
-        } catch (createError) {
+          await player.connect();
+} catch (createError) {
           console.error("Player creation error:", createError);
 
           const isFetchError = createError.message?.includes('fetch failed') ||
@@ -783,8 +728,8 @@ module.exports = {
                 volume: 80,
                 deaf: true,
               });
-
-              console.log(`[Music] Successfully recreated player for guild ${message.guild.id} after retry.`);
+          await player.connect();
+console.log(`[Music] Successfully recreated player for guild ${message.guild.id} after retry.`);
             } catch (retryError) {
               console.error("[Music] Player creation retry error:", retryError);
               throw new Error(`Voice connection failed after retry: ${getErrMsg(retryError)}`);
@@ -806,21 +751,17 @@ module.exports = {
         }
       } else {
         if (player.voiceId !== channel.id) {
-          const errorDisplay = new TextDisplayBuilder()
-            .setContent(`**${client.emoji.warn} I'm already connected to a different voice channel.**`);
+          const errorDisplay = new EmbedBuilder().setDescription(`**${client.emoji.warn} I'm already connected to a different voice channel.**`).setColor(client.config.color || "#00D4FF");
 
-          const container = new ContainerBuilder()
-            .addTextDisplayComponents(errorDisplay);
+          const container = [errorDisplay];
 
           try {
             return await message.reply({
-              components: [container],
-              flags: MessageFlags.IsComponentsV2
+              embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
             });
           } catch (e) {
             return await message.channel.send({
-              components: [container],
-              flags: MessageFlags.IsComponentsV2
+              embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
             }).catch(() => null);
           }
         }
@@ -856,15 +797,12 @@ module.exports = {
       }
 
       if (!searchResult || !searchResult.tracks || !searchResult.tracks.length) {
-        const errorDisplay = new TextDisplayBuilder()
-          .setContent(`**${client.emoji.cross} No result was found for "${query}"**`);
+        const errorDisplay = new EmbedBuilder().setDescription(`**${client.emoji.cross} No result was found for "${query}"**`).setColor(client.config.color || "#00D4FF");
 
-        const container = new ContainerBuilder()
-          .addTextDisplayComponents(errorDisplay);
+        const container = [errorDisplay];
 
         return message.reply({
-          components: [container],
-          flags: MessageFlags.IsComponentsV2
+          embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
         }).catch(() => null);
       }
 
@@ -884,21 +822,17 @@ module.exports = {
 
 
       if (addedTracks.length === 0) {
-        const errorDisplay = new TextDisplayBuilder()
-          .setContent(`**${client.emoji.cross} No tracks could be processed**`);
+        const errorDisplay = new EmbedBuilder().setDescription(`**${client.emoji.cross} No tracks could be processed**`).setColor(client.config.color || "#00D4FF");
 
-        const container = new ContainerBuilder()
-          .addTextDisplayComponents(errorDisplay);
+        const container = [errorDisplay];
 
         try {
           return await message.reply({
-            components: [container],
-            flags: MessageFlags.IsComponentsV2
+            embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
           });
         } catch (e) {
           return await message.channel.send({
-            components: [container],
-            flags: MessageFlags.IsComponentsV2
+            embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
           });
         }
       }
@@ -935,21 +869,17 @@ module.exports = {
       }
 
       if (searchResult.type === "PLAYLIST") {
-        const successDisplay = new TextDisplayBuilder()
-          .setContent(`**${client.emoji.check} Queued \`${addedTracks.length}\` tracks from \`${searchResult.playlistName}\`**`);
+        const successDisplay = new EmbedBuilder().setDescription(`**${client.emoji.check} Queued \`${addedTracks.length}\` tracks from \`${searchResult.playlistName}\`**`).setColor(client.config.color || "#00D4FF");
 
-        const container = new ContainerBuilder()
-          .addTextDisplayComponents(successDisplay);
+        const container = [successDisplay];
 
         try {
           await message.reply({
-            components: [container],
-            flags: MessageFlags.IsComponentsV2
+            embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
           });
         } catch (e) {
           await message.channel.send({
-            components: [container],
-            flags: MessageFlags.IsComponentsV2
+            embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
           });
         }
       } else {
@@ -992,8 +922,7 @@ module.exports = {
           return client.emoji.dot;
         };
 
-        const titleDisplay = new TextDisplayBuilder()
-          .setContent(`### ${client.emoji.check} Track Added`);
+        
 
         const pInfo = (track.track?.info) || track.track || track;
         const infoDisplay = new TextDisplayBuilder()
@@ -1003,15 +932,11 @@ module.exports = {
           );
 
         const cleanThumbP = getCleanThumbnail(pInfo.artworkUrl || pInfo.thumbnail);
-        const container = new ContainerBuilder();
+        const container = new EmbedBuilder().setColor(client.config.color || "#00D4FF");
+            const finalContainer = container;
         if (cleanThumbP) {
-          const section = new SectionBuilder()
-            .addTextDisplayComponents(titleDisplay, infoDisplay)
-            .setThumbnailAccessory((t) => t.setURL(cleanThumbP));
-          container.addSectionComponents(section);
-        } else {
-          container.addTextDisplayComponents(titleDisplay, infoDisplay);
-        }
+        container.setThumbnail(cleanThumbP);
+      }
 
         if (track.position > 0) {
           const removeButton = new ButtonBuilder()
@@ -1028,20 +953,17 @@ module.exports = {
           const buttonRow = new ActionRowBuilder()
             .addComponents(removeButton, playNextButton);
 
-          container.addSeparatorComponents(new SeparatorBuilder());
-          container.addActionRowComponents(buttonRow);
+          /* No separator needed */
         }
 
         let replyMsg;
         try {
           replyMsg = await message.reply({
-            components: [container],
-            flags: MessageFlags.IsComponentsV2
+            embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
           });
         } catch (e) {
           replyMsg = await message.channel.send({
-            components: [container],
-            flags: MessageFlags.IsComponentsV2
+            embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
           });
         }
 
@@ -1072,17 +994,14 @@ module.exports = {
                   const removedTrack = player.queue[trackIndex];
                   player.queue.splice(trackIndex, 1);
 
-                  const updatedDisplay = new TextDisplayBuilder()
-                    .setContent(`**${client.emoji.check} Removed [${truncateTitle(removedTrack.title, 25)}](${removedTrack.uri}) from queue.**`);
+                  const updatedDisplay = new EmbedBuilder().setDescription(`**${client.emoji.check} Removed [${truncateTitle(removedTrack.title, 25)}](${removedTrack.uri}) from queue.**`).setColor(client.config.color || "#00D4FF");
 
-                  const updatedContainer = new ContainerBuilder()
-                    .addTextDisplayComponents(updatedDisplay);
+                  const updatedContainer = [updatedDisplay];
 
                   await interaction.deferUpdate().catch(() => { });
 
                   await interaction.message.edit({
-                    components: [updatedContainer],
-                    flags: MessageFlags.IsComponentsV2
+                    embeds: updatedContainer
                   }).catch(() => { });
 
                   interaction.message.actionTaken = true;
@@ -1104,17 +1023,14 @@ module.exports = {
                   player.queue.splice(trackIndex, 1);
                   player.queue.unshift(trackToMove);
 
-                  const updatedDisplay = new TextDisplayBuilder()
-                    .setContent(`**${client.emoji.check} Moved [${truncateTitle(trackToMove.title, 25)}](${trackToMove.uri}) to next in queue.**`);
+                  const updatedDisplay = new EmbedBuilder().setDescription(`**${client.emoji.check} Moved [${truncateTitle(trackToMove.title, 25)}](${trackToMove.uri}) to next in queue.**`).setColor(client.config.color || "#00D4FF");
 
-                  const updatedContainer = new ContainerBuilder()
-                    .addTextDisplayComponents(updatedDisplay);
+                  const updatedContainer = [updatedDisplay];
 
                   await interaction.deferUpdate().catch(() => { });
 
                   await interaction.message.edit({
-                    components: [updatedContainer],
-                    flags: MessageFlags.IsComponentsV2
+                    embeds: updatedContainer
                   }).catch(() => { });
 
                   interaction.message.actionTaken = true;
@@ -1129,8 +1045,7 @@ module.exports = {
 
           collector.on('end', () => {
             if (replyMsg && !replyMsg.deleted && !replyMsg.actionTaken) {
-              const finalTitleDisplay = new TextDisplayBuilder()
-                .setContent(`### ${client.emoji.check} Track Added`);
+              const finalTitleDisplay = new EmbedBuilder().setDescription(`### ${client.emoji.check} Track Added`).setColor(client.config.color || "#00D4FF");
 
               const fpInfo = (track.track?.info) || track.track || track;
               const finalInfoDisplay = new TextDisplayBuilder()
@@ -1143,16 +1058,15 @@ module.exports = {
               const finalContainer = new ContainerBuilder();
               if (finalCleanThumbP) {
                 const finalSection = new SectionBuilder()
-                  .addTextDisplayComponents(finalTitleDisplay, finalInfoDisplay)
+                  /* removed */(finalTitleDisplay, finalInfoDisplay)
                   .setThumbnailAccessory((t) => t.setURL(finalCleanThumbP));
-                finalContainer.addSectionComponents(finalSection);
+                finalContainer/* removed */(finalSection);
               } else {
-                finalContainer.addTextDisplayComponents(finalTitleDisplay, finalInfoDisplay);
+                finalContainer/* removed */(finalTitleDisplay, finalInfoDisplay);
               }
 
               replyMsg.edit({
-                components: [finalContainer],
-                flags: MessageFlags.IsComponentsV2
+                embeds: [finalContainer]
               }).catch(() => { });
             }
           });
@@ -1168,22 +1082,18 @@ module.exports = {
         errorMessage = `An error occurred while playing: ${error.message}`;
       }
 
-      const errorDisplay = new TextDisplayBuilder()
-        .setContent(`**${client.emoji.cross} ${errorMessage}**`);
+      const errorDisplay = new EmbedBuilder().setDescription(`**${client.emoji.cross} ${errorMessage}**`).setColor(client.config.color || "#00D4FF");
 
-      const container = new ContainerBuilder()
-        .addTextDisplayComponents(errorDisplay);
+      const container = [errorDisplay];
 
       try {
         await message.reply({
-          components: [container],
-          flags: MessageFlags.IsComponentsV2
+          embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
         });
       } catch (replyError) {
         try {
           await message.channel.send({
-            components: [container],
-            flags: MessageFlags.IsComponentsV2
+            embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
           });
         } catch (sendError) {
           console.error("Failed to send error message:", sendError);
