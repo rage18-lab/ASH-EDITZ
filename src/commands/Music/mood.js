@@ -141,7 +141,6 @@ module.exports = {
                     volume: 80,
                     deaf: true,
                 });
-          await player.connect();
  await player.connect();
 }
 

@@ -170,7 +170,6 @@ module.exports = {
             volume: 80,
             deaf: true,
           });
-          await player.connect();
 } catch (createError) {
           console.error("Player creation error:", createError);
           console.log(`Attempting automated fix for guild ${interaction.guild.id}...`);
@@ -201,7 +200,6 @@ module.exports = {
               volume: 80,
               deaf: true,
             });
-          await player.connect();
 } else if (botActualChannelId === channel.id) {
             // Bot is already in the user's channel — just update player voiceId
             player.voiceId = channel.id;
@@ -697,7 +695,6 @@ module.exports = {
             volume: 80,
             deaf: true,
           });
-          await player.connect();
 } catch (createError) {
           console.error("Player creation error:", createError);
 
@@ -728,7 +725,6 @@ module.exports = {
                 volume: 80,
                 deaf: true,
               });
-          await player.connect();
 console.log(`[Music] Successfully recreated player for guild ${message.guild.id} after retry.`);
             } catch (retryError) {
               console.error("[Music] Player creation retry error:", retryError);
