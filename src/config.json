@@ -26,24 +26,10 @@
   },
   "nodes": [
     {
-      "id": "jirayu",
-      "host": "lavalink.jirayu.net",
-      "port": 13592,
-      "authorization": "youshallnotpass",
-      "secure": false
-    },
-    {
-      "id": "serenetia",
-      "host": "lavalinkv4.serenetia.com",
-      "port": 443,
-      "authorization": "https://dsc.gg/ajidevserver",
-      "secure": true
-    },
-    {
-      "id": "g3v",
-      "host": "lava.g3v.co.uk",
-      "port": 9008,
-      "authorization": "lavalinklol",
+      "id": "heavencloud",
+      "host": "free-lava.heavencloud.in",
+      "port": 4000,
+      "authorization": "heavencloud.in",
       "secure": false
     }
   ],
