@@ -54,8 +54,8 @@ module.exports = {
 
         const player = await client.manager.createPlayer({
           guildId: data.guildId,
-          voiceId: data.voiceId,
-          textId: data.textId,
+          voiceChannelId: data.voiceId,
+          textChannelId: data.textId,
           deaf: true,
           volume: 80,
         });

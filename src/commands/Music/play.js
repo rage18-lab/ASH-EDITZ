@@ -165,8 +165,8 @@ module.exports = {
         try {
           player = await client.manager.createPlayer({
             guildId: interaction.guild.id,
-            voiceId: channel.id,
-            textId: interaction.channel.id,
+            voiceChannelId: channel.id,
+            textChannelId: interaction.channel.id,
             volume: 80,
             deaf: true,
           });
@@ -184,7 +184,7 @@ module.exports = {
           }
         }
       } else {
-        if (player.voiceId !== channel.id) {
+        if (player.voiceChannelId !== channel.id) {
           // Check if the bot is actually still in that other channel
           const botMember = interaction.guild.members.cache.get(client.user.id);
           const botActualChannelId = botMember?.voice?.channelId;
@@ -195,14 +195,14 @@ module.exports = {
             client.manager.players.delete(interaction.guild.id);
             player = await client.manager.createPlayer({
               guildId: interaction.guild.id,
-              voiceId: channel.id,
-              textId: interaction.channel.id,
+              voiceChannelId: channel.id,
+              textChannelId: interaction.channel.id,
               volume: 80,
               deaf: true,
             });
 } else if (botActualChannelId === channel.id) {
             // Bot is already in the user's channel — just update player voiceId
-            player.voiceId = channel.id;
+            player.voiceChannelId = channel.id;
           } else {
             // Bot is truly in a different active channel
             const errorDisplay = new EmbedBuilder().setDescription(`**${client.emoji.warn} I'm already connected to a different voice channel.**`).setColor(client.config.color || "#00D4FF");
@@ -215,8 +215,8 @@ module.exports = {
           }
         }
 
-        if (player.textId !== interaction.channel.id) {
-          player.textId = interaction.channel.id;
+        if (player.textChannelId !== interaction.channel.id) {
+          player.textChannelId = interaction.channel.id;
         }
       }
 
@@ -421,7 +421,7 @@ module.exports = {
         });
 
         collector.on('collect', async (buttonInteraction) => {
-          if (!buttonInteraction.member.voice.channel || buttonInteraction.member.voice.channel.id !== player.voiceId) {
+          if (!buttonInteraction.member.voice.channel || buttonInteraction.member.voice.channel.id !== player.voiceChannelId) {
             return buttonInteraction.reply({ content: `**${client.emoji.warn} You must be in my voice channel to use this.**`, ephemeral: true });
           }
 
@@ -670,8 +670,8 @@ module.exports = {
         try {
           player = await client.manager.createPlayer({
             guildId: message.guild.id,
-            voiceId: channel.id,
-            textId: message.channel.id,
+            voiceChannelId: channel.id,
+            textChannelId: message.channel.id,
             volume: 80,
             deaf: true,
           });
@@ -700,8 +700,8 @@ module.exports = {
 
               player = await client.manager.createPlayer({
                 guildId: message.guild.id,
-                voiceId: channel.id,
-                textId: message.channel.id,
+                voiceChannelId: channel.id,
+                textChannelId: message.channel.id,
                 volume: 80,
                 deaf: true,
               });
@@ -726,7 +726,7 @@ console.log(`[Music] Successfully recreated player for guild ${message.guild.id}
           }
         }
       } else {
-        if (player.voiceId !== channel.id) {
+        if (player.voiceChannelId !== channel.id) {
           const errorDisplay = new EmbedBuilder().setDescription(`**${client.emoji.warn} I'm already connected to a different voice channel.**`).setColor(client.config.color || "#00D4FF");
 
           const container = [errorDisplay];
@@ -742,8 +742,8 @@ console.log(`[Music] Successfully recreated player for guild ${message.guild.id}
           }
         }
 
-        if (player.textId !== message.channel.id) {
-          player.textId = message.channel.id;
+        if (player.textChannelId !== message.channel.id) {
+          player.textChannelId = message.channel.id;
         }
       }
 
@@ -947,7 +947,7 @@ console.log(`[Music] Successfully recreated player for guild ${message.guild.id}
           });
 
           collector.on('collect', async (interaction) => {
-            if (!interaction.member.voice.channel || interaction.member.voice.channel.id !== player.voiceId) {
+            if (!interaction.member.voice.channel || interaction.member.voice.channel.id !== player.voiceChannelId) {
               return interaction.reply({ content: `**${client.emoji.warn} You must be in my voice channel to use this.**`, ephemeral: true });
             }
 

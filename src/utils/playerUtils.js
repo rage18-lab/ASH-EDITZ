@@ -31,7 +31,7 @@ async function handleSessionError(error, player, client) {
     return false;
 }
 
-async function recreatePlayer(client, guildId, voiceId, textId) {
+async function recreatePlayer(client, guildId, voiceChannelId, textChannelId) {
     try {
         // Destroy existing player if present
         if (client.manager.players.has(guildId)) {
@@ -57,8 +57,8 @@ async function recreatePlayer(client, guildId, voiceId, textId) {
 
         const newPlayer = await client.manager.createPlayer({
             guildId: guildId,
-            voiceId: voiceId,
-            textId: textId,
+            voiceChannelId: voiceId,
+            textChannelId: textId,
             volume: 80,
             deaf: true,
         });
@@ -86,8 +86,8 @@ if (!newPlayer) {
             try {
                 return await client.manager.createPlayer({
                     guildId: guildId,
-                    voiceId: voiceId,
-                    textId: textId,
+                    voiceChannelId: voiceId,
+                    textChannelId: textId,
                     volume: 80,
                     deaf: true,
                 });

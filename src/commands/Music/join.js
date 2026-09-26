@@ -41,7 +41,7 @@ module.exports = {
 
     if (player) {
       const warnDisplay = new TextDisplayBuilder()
-        .setContent(`**${client.emoji.warn} I'm already connected to <#${player.voiceId}>**`);
+        .setContent(`**${client.emoji.warn} I'm already connected to <#${player.voiceChannelId}>**`);
 
       const container = new ContainerBuilder()
         .addTextDisplayComponents(warnDisplay);
@@ -71,8 +71,8 @@ module.exports = {
 
     player = await client.manager.createPlayer({
       guildId: interaction.guild.id,
-      voiceId: interaction.member.voice.channel.id,
-      textId: interaction.channel.id,
+      voiceChannelId: interaction.member.voice.channel.id,
+      textChannelId: interaction.channel.id,
       volume: 100,
       deaf: true,
       mute: false,
@@ -106,7 +106,7 @@ module.exports = {
 
     if (player) {
       const warnDisplay = new TextDisplayBuilder()
-        .setContent(`**${client.emoji.warn} I'm already connected to <#${player.voiceId}>**`);
+        .setContent(`**${client.emoji.warn} I'm already connected to <#${player.voiceChannelId}>**`);
 
       const container = new ContainerBuilder()
         .addTextDisplayComponents(warnDisplay);
@@ -138,8 +138,8 @@ module.exports = {
 
     player = await client.manager.createPlayer({
       guildId: message.guild.id,
-      voiceId: message.member.voice.channel.id,
-      textId: message.channel.id,
+      voiceChannelId: message.member.voice.channel.id,
+      textChannelId: message.channel.id,
       volume: 100,
       deaf: true,
       mute: false,

@@ -82,8 +82,8 @@ module.exports = {
 
                 await client.manager.createPlayer({
                     guildId: message.guild.id,
-                    voiceId: channel.id,
-                    textId: message.channel.id,
+                    voiceChannelId: channel.id,
+                    textChannelId: message.channel.id,
                     volume: 100,
                     deaf: true,
                     mute: false,
@@ -117,7 +117,7 @@ module.exports = {
             }
         }
 
-        if (player.voiceId === channel.id) {
+        if (player.voiceChannelId === channel.id) {
             const warnDisplay = new TextDisplayBuilder()
                 .setContent(`**${client.emoji.warn} I am already in your voice channel.**`);
 
@@ -137,7 +137,7 @@ module.exports = {
             let is247Updated = false;
 
             if (twoFourSeven) {
-                client.db.twofourseven.set(message.guild.id, { voiceId: channel.id, textId: message.channel.id });
+                client.db.twofourseven.set(message.guild.id, { voiceChannelId: channel.id, textChannelId: message.channel.id });
                 is247Updated = true;
             }
 

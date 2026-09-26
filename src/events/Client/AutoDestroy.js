@@ -54,8 +54,8 @@ module.exports = {
 
                 const newPlayer = await client.manager.createPlayer({
                   guildId: guildId,
-                  voiceId: twoFourSeven.voiceId,
-                  textId: twoFourSeven.textId,
+                  voiceChannelId: twoFourSeven.voiceId,
+                  textChannelId: twoFourSeven.textId,
                   volume: 80,
                   deaf: true,
                   mute: false,
@@ -124,7 +124,7 @@ module.exports = {
 
         if (!player) return;
         await client.rest
-          .put(`/channels/${player.voiceId}/voice-status`, {
+          .put(`/channels/${player.voiceChannelId}/voice-status`, {
             body: { status: `` },
           })
           .catch(() => null);
@@ -154,7 +154,7 @@ module.exports = {
       try {
         player.setVoiceChannel(newState.channelId);
 
-        const textChannel = client.channels.cache.get(player.textId);
+        const textChannel = client.channels.cache.get(player.textChannelId);
         if (textChannel) {
           const display = new TextDisplayBuilder()
             .setContent(`**Hot Pursuit !**\n${client.emoji.blank}${client.emoji.wickarrow} **M__oved__** to another channel`);
@@ -192,12 +192,12 @@ module.exports = {
         player.data.set('aloneStartTime', Date.now());
 
         await client.rest
-          .put(`/channels/${player.voiceId}/voice-status`, {
+          .put(`/channels/${player.voiceChannelId}/voice-status`, {
             body: { status: `${client.emoji.pause} Song Paused` },
           })
           .catch(() => null);
 
-        const textChannel = client.channels.cache.get(player.textId);
+        const textChannel = client.channels.cache.get(player.textChannelId);
         if (textChannel) {
           const display = new TextDisplayBuilder()
             .setContent(`**Hot Pursuit !**\n${client.emoji.blank}${client.emoji.wickarrow} **P__aused__** Waiting for listeners`);
@@ -277,13 +277,13 @@ module.exports = {
         const currentTrack = player.queue?.current;
         if (currentTrack) {
           await client.rest
-            .put(`/channels/${player.voiceId}/voice-status`, {
+            .put(`/channels/${player.voiceChannelId}/voice-status`, {
               body: { status: `${client.emoji.dance} Playing **${currentTrack.title}**` },
             })
             .catch(() => null);
         }
 
-        const textChannel = client.channels.cache.get(player.textId);
+        const textChannel = client.channels.cache.get(player.textChannelId);
         if (textChannel) {
           const display = new TextDisplayBuilder()
             .setContent(`**Hot Pursuit !**\n${client.emoji.blank}${client.emoji.wickarrow} **R__esumed__** Welcome back`);

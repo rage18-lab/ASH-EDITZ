@@ -78,8 +78,8 @@ module.exports = {
         if (!player) {
             player = await client.manager.createPlayer({
                 guildId: guildId,
-                voiceId: channel.id,
-                textId: context.channel.id,
+                voiceChannelId: channel.id,
+                textChannelId: context.channel.id,
                 volume: 80,
                 deaf: true,
             });

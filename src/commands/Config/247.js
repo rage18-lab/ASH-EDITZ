@@ -88,8 +88,8 @@ module.exports = {
       }
 
       const player = client.manager.players.get(message.guild.id);
-      if (player && player.voiceId) {
-        if (voiceChannel.id !== player.voiceId) {
+      if (player && player.voiceChannelId) {
+        if (voiceChannel.id !== player.voiceChannelId) {
           const errorDisplay = new TextDisplayBuilder()
             .setContent(`### ${client.emoji.warn} **Different Voice Channel**`);
 
@@ -114,16 +114,16 @@ module.exports = {
 
       if (action === 'enable') {
         client.db.twofourseven.set(message.guild.id, {
-          textId: message.channel.id,
-          voiceId: voiceChannel.id
+          textChannelId: message.channel.id,
+          voiceChannelId: voiceChannel.id
         });
 
         let currentPlayer = client.manager.players.get(message.guild.id);
         if (!currentPlayer) {
           currentPlayer = await client.manager.createPlayer({
             guildId: message.guild.id,
-            voiceId: voiceChannel.id,
-            textId: message.channel.id,
+            voiceChannelId: voiceChannel.id,
+            textChannelId: message.channel.id,
             deaf: true,
             volume: 80
           });
@@ -245,16 +245,16 @@ module.exports = {
 
           if (interaction.customId === '247_enable') {
             client.db.twofourseven.set(message.guild.id, {
-              textId: message.channel.id,
-              voiceId: currentVoiceChannel.id
+              textChannelId: message.channel.id,
+              voiceChannelId: currentVoiceChannel.id
             });
 
             let player = client.manager.players.get(message.guild.id);
             if (!player) {
               player = await client.manager.createPlayer({
                 guildId: message.guild.id,
-                voiceId: currentVoiceChannel.id,
-                textId: message.channel.id,
+                voiceChannelId: currentVoiceChannel.id,
+                textChannelId: message.channel.id,
                 deaf: true,
                 volume: 80
               });

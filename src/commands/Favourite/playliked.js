@@ -103,8 +103,8 @@ module.exports = {
         try {
           player = await client.manager.createPlayer({
             guildId: message.guild.id,
-            voiceId: message.member.voice.channel.id,
-            textId: message.channel.id,
+            voiceChannelId: message.member.voice.channel.id,
+            textChannelId: message.channel.id,
             volume: 80,
             deaf: true,
           });
@@ -123,7 +123,7 @@ module.exports = {
           });
         }
       } else {
-        if (player.voiceId !== message.member.voice.channel.id) {
+        if (player.voiceChannelId !== message.member.voice.channel.id) {
           const errorDisplay = new TextDisplayBuilder()
             .setContent(`**${client.emoji.cross} You must be in the same voice channel as the bot!**`);
 
@@ -136,8 +136,8 @@ module.exports = {
           });
         }
 
-        if (player.textId !== message.channel.id) {
-          player.textId = message.channel.id;
+        if (player.textChannelId !== message.channel.id) {
+          player.textChannelId = message.channel.id;
         }
       }
 
