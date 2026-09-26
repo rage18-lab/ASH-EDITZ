@@ -363,19 +363,15 @@ module.exports = {
       
 
       const tInfo = track.info || track;
-      const infoDisplay = new TextDisplayBuilder()
-        .setContent(
+      const cleanThumb = getCleanThumbnail(tInfo.artworkUrl || tInfo.thumbnail);
+      const container = new EmbedBuilder()
+        .setColor(client.config.color || "#00D4FF")
+        .setTitle(`${client.emoji.check} Track Added`)
+        .setDescription(
           `[**${truncateTitle(tInfo.title, 25)}**](${tInfo.uri || '#'}) by \` ${cleanAuthorName(tInfo.author)} \`\n` +
           `-# Position \` #${position} \` • Duration \` ${convertTime(tInfo.duration || tInfo.length)} \` • By \` ${interaction.user.username} \``
         );
-
-      const cleanThumb = getCleanThumbnail(tInfo.artworkUrl || tInfo.thumbnail);
-      const container = new EmbedBuilder().setColor(client.config.color || "#00D4FF");
-            const finalContainer = container;
-
-      if (cleanThumb) {
-        container.setThumbnail(cleanThumb);
-      }
+      if (cleanThumb) container.setThumbnail(cleanThumb);
 
       if (position > 0) {
         const removeButton = new ButtonBuilder()
@@ -496,29 +492,17 @@ module.exports = {
 
         collector.on('end', () => {
           if (replyMsg && !replyMsg.deleted && !replyMsg.actionTaken) {
-            const finalTitleDisplay = new EmbedBuilder().setDescription(`### ${client.emoji.check} Track Added`).setColor(client.config.color || "#00D4FF");
-
             const ftInfo = track.info || track;
-            const finalInfoDisplay = new TextDisplayBuilder()
-              .setContent(
+            const finalCleanThumb = getCleanThumbnail(ftInfo.artworkUrl || ftInfo.thumbnail);
+            const finalContainer = new EmbedBuilder()
+              .setColor(client.config.color || "#00D4FF")
+              .setTitle(`${client.emoji.check} Track Added`)
+              .setDescription(
                 `[**${truncateTitle(ftInfo.title, 25)}**](${ftInfo.uri || '#'}) by \` ${cleanAuthorName(ftInfo.author)} \`\n` +
                 `-# Position \` #${position} \` • Duration \` ${convertTime(ftInfo.duration || ftInfo.length)} \` • By \` ${interaction.user.username} \``
               );
-
-            const finalCleanThumb = getCleanThumbnail(ftInfo.artworkUrl || ftInfo.thumbnail);
-            const finalContainer = new ContainerBuilder();
-            if (finalCleanThumb) {
-              const finalSection = new SectionBuilder()
-                /* removed */(finalTitleDisplay, finalInfoDisplay)
-                .setThumbnailAccessory((t) => t.setURL(finalCleanThumb));
-              finalContainer/* removed */(finalSection);
-            } else {
-              finalContainer/* removed */(finalTitleDisplay, finalInfoDisplay);
-            }
-
-            replyMsg.edit({
-              embeds: [finalContainer]
-            }).catch(() => { });
+            if (finalCleanThumb) finalContainer.setThumbnail(finalCleanThumb);
+            replyMsg.edit({ embeds: [finalContainer], components: [] }).catch(() => { });
           }
         });
       }
@@ -610,17 +594,13 @@ module.exports = {
     }
 
     if (!query) {
-      const usageDisplay = new TextDisplayBuilder()
-        .setContent(
+      const usageEmbed = new EmbedBuilder()
+        .setColor(client.config.color || "#00D4FF")
+        .setDescription(
           `**${client.emoji.dot} Usage** \`:\` \`${prefix}play [Song Name/URL]\`\n` +
           `**${client.emoji.dot} Example** \`:\` \`${prefix}play imagine dragons believer\``
         );
-
-      const container = [usageDisplay];
-
-      return message.channel.send({
-        embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
-      });
+      return message.channel.send({ embeds: [usageEmbed] });
     }
 
     const channel = message.member.voice.channel;
@@ -921,18 +901,15 @@ console.log(`[Music] Successfully recreated player for guild ${message.guild.id}
         
 
         const pInfo = (track.track?.info) || track.track || track;
-        const infoDisplay = new TextDisplayBuilder()
-          .setContent(
-            `> [**${truncateTitle(pInfo.title, 25)}**](${pInfo.uri || '#'}) by \` ${cleanAuthorName(pInfo.author)} \`\n` +
-            `> Position \` #${track.position} \` • Duration \` ${convertTime(pInfo.duration || pInfo.length)} \` • By \` ${message.author.username} \``
-          );
-
         const cleanThumbP = getCleanThumbnail(pInfo.artworkUrl || pInfo.thumbnail);
-        const container = new EmbedBuilder().setColor(client.config.color || "#00D4FF");
-            const finalContainer = container;
-        if (cleanThumbP) {
-        container.setThumbnail(cleanThumbP);
-      }
+        const container = new EmbedBuilder()
+          .setColor(client.config.color || "#00D4FF")
+          .setTitle(`${client.emoji.check} Track Added`)
+          .setDescription(
+            `[**${truncateTitle(pInfo.title, 25)}**](${pInfo.uri || '#'}) by \` ${cleanAuthorName(pInfo.author)} \`\n` +
+            `Position \` #${track.position} \` • Duration \` ${convertTime(pInfo.duration || pInfo.length)} \` • By \` ${message.author.username} \``
+          );
+        if (cleanThumbP) container.setThumbnail(cleanThumbP);
 
         if (track.position > 0) {
           const removeButton = new ButtonBuilder()
@@ -1041,29 +1018,17 @@ console.log(`[Music] Successfully recreated player for guild ${message.guild.id}
 
           collector.on('end', () => {
             if (replyMsg && !replyMsg.deleted && !replyMsg.actionTaken) {
-              const finalTitleDisplay = new EmbedBuilder().setDescription(`### ${client.emoji.check} Track Added`).setColor(client.config.color || "#00D4FF");
-
               const fpInfo = (track.track?.info) || track.track || track;
-              const finalInfoDisplay = new TextDisplayBuilder()
-                .setContent(
-                  `> [**${truncateTitle(fpInfo.title, 25)}**](${fpInfo.uri || '#'}) by \` ${cleanAuthorName(fpInfo.author)} \`\n` +
-                  `> Position \` #${track.position} \` • Duration \` ${convertTime(fpInfo.duration || fpInfo.length)} \` • By \` ${message.author.username} \``
-                );
-
               const finalCleanThumbP = getCleanThumbnail(fpInfo.artworkUrl || fpInfo.thumbnail);
-              const finalContainer = new ContainerBuilder();
-              if (finalCleanThumbP) {
-                const finalSection = new SectionBuilder()
-                  /* removed */(finalTitleDisplay, finalInfoDisplay)
-                  .setThumbnailAccessory((t) => t.setURL(finalCleanThumbP));
-                finalContainer/* removed */(finalSection);
-              } else {
-                finalContainer/* removed */(finalTitleDisplay, finalInfoDisplay);
-              }
-
-              replyMsg.edit({
-                embeds: [finalContainer]
-              }).catch(() => { });
+              const finalContainer = new EmbedBuilder()
+                .setColor(client.config.color || "#00D4FF")
+                .setTitle(`${client.emoji.check} Track Added`)
+                .setDescription(
+                  `[**${truncateTitle(fpInfo.title, 25)}**](${fpInfo.uri || '#'}) by \` ${cleanAuthorName(fpInfo.author)} \`\n` +
+                  `Position \` #${track.position} \` • Duration \` ${convertTime(fpInfo.duration || fpInfo.length)} \` • By \` ${message.author.username} \``
+                );
+              if (finalCleanThumbP) finalContainer.setThumbnail(finalCleanThumbP);
+              replyMsg.edit({ embeds: [finalContainer], components: [] }).catch(() => { });
             }
           });
         }
