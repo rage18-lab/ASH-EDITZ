@@ -119,7 +119,7 @@ module.exports = {
       const container = [errorDisplay];
 
       return interaction.editReply({
-        embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+        embeds: Array.isArray(container) ? container : [container], components: buttonRow ? [buttonRow] : []
       });
     }
 
@@ -134,7 +134,7 @@ module.exports = {
       const container = [errorDisplay];
 
       return interaction.editReply({
-        embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+        embeds: Array.isArray(container) ? container : [container], components: buttonRow ? [buttonRow] : []
       });
     }
 
@@ -147,7 +147,7 @@ module.exports = {
         const container = [errorDisplay];
 
         return interaction.editReply({
-          embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+          embeds: Array.isArray(container) ? container : [container], components: buttonRow ? [buttonRow] : []
         });
       }
 
@@ -211,7 +211,7 @@ module.exports = {
             const container = [errorDisplay];
 
             return interaction.editReply({
-              embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+              embeds: Array.isArray(container) ? container : [container], components: buttonRow ? [buttonRow] : []
             });
           }
         }
@@ -258,7 +258,7 @@ module.exports = {
         const container = [errorDisplay];
 
         return interaction.editReply({
-          embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+          embeds: Array.isArray(container) ? container : [container], components: buttonRow ? [buttonRow] : []
         });
       }
 
@@ -298,7 +298,7 @@ module.exports = {
         const container = [successDisplay];
 
         return interaction.editReply({
-          embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+          embeds: Array.isArray(container) ? container : [container], components: buttonRow ? [buttonRow] : []
         });
       }
 
@@ -517,11 +517,11 @@ module.exports = {
       try {
         if (!interaction.deferred && !interaction.replied) {
           await interaction.reply({
-            embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+            embeds: Array.isArray(container) ? container : [container], components: buttonRow ? [buttonRow] : []
           });
         } else if (interaction.deferred) {
           await interaction.editReply({
-            embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+            embeds: Array.isArray(container) ? container : [container], components: buttonRow ? [buttonRow] : []
           });
         }
       } catch (replyError) {
@@ -530,7 +530,7 @@ module.exports = {
             const channel = client.channels.cache.get(interaction.channel.id);
             if (channel) {
               await channel.send({
-                embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+                embeds: Array.isArray(container) ? container : [container], components: buttonRow ? [buttonRow] : []
               });
             }
           } catch (channelError) {
@@ -598,11 +598,11 @@ module.exports = {
 
       try {
         return await message.reply({
-          embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+          embeds: Array.isArray(container) ? container : [container], components: buttonRow ? [buttonRow] : []
         });
       } catch (e) {
         return await message.channel.send({
-          embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+          embeds: Array.isArray(container) ? container : [container], components: buttonRow ? [buttonRow] : []
         }).catch(() => null);
       }
     }
@@ -619,11 +619,11 @@ module.exports = {
 
       try {
         return await message.reply({
-          embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+          embeds: Array.isArray(container) ? container : [container], components: buttonRow ? [buttonRow] : []
         });
       } catch (e) {
         return await message.channel.send({
-          embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+          embeds: Array.isArray(container) ? container : [container], components: buttonRow ? [buttonRow] : []
         }).catch(() => null);
       }
     }
@@ -639,7 +639,7 @@ module.exports = {
         const container = [errorDisplay];
 
         return message.reply({
-          embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+          embeds: Array.isArray(container) ? container : [container], components: buttonRow ? [buttonRow] : []
         });
       }
 
@@ -720,11 +720,11 @@ console.log(`[Music] Successfully recreated player for guild ${message.guild.id}
 
           try {
             return await message.reply({
-              embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+              embeds: Array.isArray(container) ? container : [container], components: buttonRow ? [buttonRow] : []
             });
           } catch (e) {
             return await message.channel.send({
-              embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+              embeds: Array.isArray(container) ? container : [container], components: buttonRow ? [buttonRow] : []
             }).catch(() => null);
           }
         }
@@ -769,7 +769,7 @@ console.log(`[Music] Successfully recreated player for guild ${message.guild.id}
         const container = [errorDisplay];
 
         return message.reply({
-          embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+          embeds: Array.isArray(container) ? container : [container], components: buttonRow ? [buttonRow] : []
         }).catch(() => null);
       }
 
@@ -795,11 +795,11 @@ console.log(`[Music] Successfully recreated player for guild ${message.guild.id}
 
         try {
           return await message.reply({
-            embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+            embeds: Array.isArray(container) ? container : [container], components: buttonRow ? [buttonRow] : []
           });
         } catch (e) {
           return await message.channel.send({
-            embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+            embeds: Array.isArray(container) ? container : [container], components: buttonRow ? [buttonRow] : []
           });
         }
       }
@@ -842,11 +842,11 @@ console.log(`[Music] Successfully recreated player for guild ${message.guild.id}
 
         try {
           await message.reply({
-            embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+            embeds: Array.isArray(container) ? container : [container], components: buttonRow ? [buttonRow] : []
           });
         } catch (e) {
           await message.channel.send({
-            embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+            embeds: Array.isArray(container) ? container : [container], components: buttonRow ? [buttonRow] : []
           });
         }
       } else {
@@ -1021,12 +1021,12 @@ console.log(`[Music] Successfully recreated player for guild ${message.guild.id}
 
       try {
         await message.reply({
-          embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+          embeds: Array.isArray(container) ? container : [container], components: buttonRow ? [buttonRow] : []
         });
       } catch (replyError) {
         try {
           await message.channel.send({
-            embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+            embeds: Array.isArray(container) ? container : [container], components: buttonRow ? [buttonRow] : []
           });
         } catch (sendError) {
           console.error("Failed to send error message:", sendError);
