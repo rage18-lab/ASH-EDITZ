@@ -1,9 +1,4 @@
-const {
-  ContainerBuilder,
-  TextDisplayBuilder,
-  SeparatorBuilder,
-  MessageFlags
-} = require("discord.js");
+const { EmbedBuilder } = require("discord.js");
 
 module.exports = {
   name: "playerEmpty",
@@ -19,17 +14,16 @@ module.exports = {
         .put(`/channels/${player.voiceChannelId}/voice-status`, {
           body: { status: `use **${prefix}play** to add songs` },
         })
-        .catch(() => { });
-    } catch (error) {
-    }
+        .catch(() => {});
+    } catch (_) {}
 
-    if (player.data.get("playerEmptyProcessed")) {
+    if (player.data?.get("playerEmptyProcessed")) {
       return;
     }
-    player.data.set("playerEmptyProcessed", true);
+    player.data?.set("playerEmptyProcessed", true);
 
     player.data
-      .get("message")
+      ?.get("message")
       ?.delete()
       .catch(() => null);
 
@@ -44,11 +38,12 @@ module.exports = {
       return;
     }
 
-    // If autoplay is enabled, don't disconnect — playerEnd will add the next track
+    // If autoplay is enabled, don't disconnect
     const autoplay = player.data?.get("autoplay");
     if (autoplay) {
       return;
     }
+
     const vchannel = guild.channels.cache.get(player.voiceChannelId);
 
     if (vchannel) {
@@ -71,24 +66,14 @@ module.exports = {
         }
 
         if ((!player.queue || player.queue.size === 0) && !player.playing && !player.paused) {
-          const headerDisplay = new TextDisplayBuilder()
-            .setContent(`**${client.emoji.info} Queue Ended**`);
-
-          const separator = new SeparatorBuilder();
-
-          const infoDisplay = new TextDisplayBuilder()
-            .setContent(`Disconnecting due to inactivity.`);
-
-          const container = new ContainerBuilder()
-            .addTextDisplayComponents(headerDisplay)
-            .addSeparatorComponents(separator)
-            .addTextDisplayComponents(infoDisplay);
+          const embed = new EmbedBuilder()
+            .setColor(client.config.color || "#00D4FF")
+            .setTitle(`${client.emoji?.info || "ℹ️"} Queue Ended`)
+            .setDescription("Disconnected from voice channel due to inactivity.");
 
           client.channels.cache.get(player.textChannelId)?.send({
-            components: [container],
-            flags: MessageFlags.IsComponentsV2
+            embeds: [embed]
           }).catch(() => null);
-
 
           const currentPlayer = client.manager.players.get(player.guildId);
           if (currentPlayer && currentPlayer.state !== "DESTROYED") {
@@ -103,4 +88,3 @@ module.exports = {
     }
   },
 };
-

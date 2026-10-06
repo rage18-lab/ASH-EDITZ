@@ -1,4 +1,43 @@
-const { LavalinkManager } = require("lavalink-client");
+const { LavalinkManager, ManagerUtils } = require("lavalink-client");
+
+// Patch ManagerUtils to provide direct property access on built tracks for legacy compatibility
+const origBuildTrack = ManagerUtils.prototype.buildTrack;
+ManagerUtils.prototype.buildTrack = function (data, requester) {
+  const r = origBuildTrack.call(this, data, requester);
+  if (r && r.info) {
+    Object.defineProperties(r, {
+      title: { get() { return this.info?.title; }, set(v) { if (this.info) this.info.title = v; }, configurable: true },
+      author: { get() { return this.info?.author; }, set(v) { if (this.info) this.info.author = v; }, configurable: true },
+      uri: { get() { return this.info?.uri; }, set(v) { if (this.info) this.info.uri = v; }, configurable: true },
+      length: { get() { return this.info?.duration || 0; }, set(v) { if (this.info) this.info.duration = v; }, configurable: true },
+      duration: { get() { return this.info?.duration || 0; }, set(v) { if (this.info) this.info.duration = v; }, configurable: true },
+      thumbnail: { get() { return this.info?.artworkUrl; }, set(v) { if (this.info) this.info.artworkUrl = v; }, configurable: true },
+      identifier: { get() { return this.info?.identifier; }, set(v) { if (this.info) this.info.identifier = v; }, configurable: true },
+      sourceName: { get() { return this.info?.sourceName; }, set(v) { if (this.info) this.info.sourceName = v; }, configurable: true },
+    });
+  }
+  return r;
+};
+
+if (typeof ManagerUtils.prototype.buildUnresolvedTrack === "function") {
+  const origBuildUnresolved = ManagerUtils.prototype.buildUnresolvedTrack;
+  ManagerUtils.prototype.buildUnresolvedTrack = function (...args) {
+    const r = origBuildUnresolved.apply(this, args);
+    if (r && r.info) {
+      Object.defineProperties(r, {
+        title: { get() { return this.info?.title; }, set(v) { if (this.info) this.info.title = v; }, configurable: true },
+        author: { get() { return this.info?.author; }, set(v) { if (this.info) this.info.author = v; }, configurable: true },
+        uri: { get() { return this.info?.uri; }, set(v) { if (this.info) this.info.uri = v; }, configurable: true },
+        length: { get() { return this.info?.duration || 0; }, set(v) { if (this.info) this.info.duration = v; }, configurable: true },
+        duration: { get() { return this.info?.duration || 0; }, set(v) { if (this.info) this.info.duration = v; }, configurable: true },
+        thumbnail: { get() { return this.info?.artworkUrl; }, set(v) { if (this.info) this.info.artworkUrl = v; }, configurable: true },
+        identifier: { get() { return this.info?.identifier; }, set(v) { if (this.info) this.info.identifier = v; }, configurable: true },
+        sourceName: { get() { return this.info?.sourceName; }, set(v) { if (this.info) this.info.sourceName = v; }, configurable: true },
+      });
+    }
+    return r;
+  };
+}
 
 const searchEngines = {
   DEEZER: "dzsearch",
@@ -29,6 +68,7 @@ module.exports = function loadPlayerManager(client) {
       id: client.user?.id || "000000000000000000",
       username: "Hot Pursuit",
     },
+    autoSkip: true,
     playerOptions: {
       defaultSearchPlatform: client.config.node_source || "ytmsearch",
       volumeDecrementer: 1,
@@ -39,6 +79,15 @@ module.exports = function loadPlayerManager(client) {
       },
       onEmptyQueue: {
         destroyAfterMs: undefined, // handled manually via queueEnd event
+        autoPlayFunction: async (player, lastPlayedTrack) => {
+          if (!player.data?.get("autoplay")) return;
+          try {
+            const handleAutoplay = require("../utils/autoplayHandler");
+            await handleAutoplay(client, player, lastPlayedTrack);
+          } catch (err) {
+            console.error("[Autoplay] autoPlayFunction error:", err);
+          }
+        },
       },
     },
     queueOptions: {
@@ -48,18 +97,13 @@ module.exports = function loadPlayerManager(client) {
 
   manager.searchEngines = searchEngines;
 
-  // Override search with fallback-engine logic
-  const originalSearch = manager.search?.bind(manager);
-
+  // Search function using LavalinkNode.search
   manager.search = async function (query, requesterOrOpts, options = {}) {
     if (!this.nodeManager?.nodes) return { loadType: "empty", tracks: [] };
     const node = [...this.nodeManager.nodes.values()].find(n => n.connected) ||
       [...this.nodeManager.nodes.values()][0];
-    if (!node || !node.rest) return { loadType: "empty", tracks: [] };
+    if (!node) return { loadType: "empty", tracks: [] };
 
-    // Handle both call signatures:
-    //   manager.search(query, requester, options)  ← direct calls
-    //   manager.search(query, { requester, engine }) ← player.search() internals
     let requester, source;
     if (requesterOrOpts && typeof requesterOrOpts === "object" && !requesterOrOpts.id && (requesterOrOpts.requester !== undefined || requesterOrOpts.source !== undefined || requesterOrOpts.engine !== undefined)) {
       requester = requesterOrOpts.requester;
@@ -80,55 +124,33 @@ module.exports = function loadPlayerManager(client) {
     }
 
     const isUrl = /^https?:\/\//.test(cleanQuery);
-    const isYouTube = cleanQuery.includes("youtube.com") || cleanQuery.includes("youtu.be") || cleanQuery.includes("music.youtube.com");
 
-    if (isYouTube) {
-      const strategies = videoId
-        ? [cleanQuery, `ytsearch:${videoId}`, `ytmsearch:${videoId}`]
-        : [cleanQuery, `ytsearch:${cleanQuery}`, `ytmsearch:${cleanQuery}`];
-
-      for (const q of strategies) {
-        const res = await node.rest.loadTracks(q).catch(() => null);
-        if (res && res.loadType !== "empty" && res.loadType !== "error") {
-          if (res.tracks?.length > 0) return processResult(res, requester);
+    if (isUrl) {
+      try {
+        const res = await node.search({ query: cleanQuery }, requester);
+        if (res && res.loadType !== "empty" && res.loadType !== "error" && res.tracks?.length) {
+          return res;
         }
-      }
-    }
-
-    if (!isUrl) {
+      } catch (_) {}
+    } else {
+      const defaultEngine = client.config.node_source || "ytmsearch";
       const engineList = source
-        ? [source]
-        : [...new Set([client.config.node_source || "ytmsearch", ...fallbackEngines])];
+        ? [source, ...fallbackEngines.filter(e => e !== source)]
+        : [...new Set([defaultEngine, ...fallbackEngines])];
 
       for (const engine of engineList) {
         if (!engine) continue;
-        const searchQuery = engine.includes(":") ? cleanQuery : `${engine}:${cleanQuery}`;
-        const res = await node.rest.loadTracks(searchQuery).catch(() => null);
-        if (res && res.loadType !== "empty" && res.loadType !== "error") {
-          return processResult(res, requester);
-        }
+        try {
+          const res = await node.search({ query: cleanQuery, source: engine }, requester);
+          if (res && res.loadType !== "empty" && res.loadType !== "error" && res.tracks?.length) {
+            return res;
+          }
+        } catch (_) { continue; }
       }
     }
 
-    // fallback to built-in
-    if (originalSearch) {
-      return originalSearch({ query: cleanQuery, source }, requester).catch(() => ({ loadType: "empty", tracks: [] }));
-    }
     return { loadType: "empty", tracks: [] };
   };
-
-
-  function processResult(res, requester) {
-    if (!res) return { loadType: "empty", tracks: [] };
-    // Stamp requester on each track
-    if (res.tracks) {
-      res.tracks = res.tracks.map(t => {
-        t.requester = requester;
-        return t;
-      });
-    }
-    return res;
-  }
 
   // Node-level events
   manager.nodeManager.on("connect", (node) =>
@@ -149,6 +171,27 @@ module.exports = function loadPlayerManager(client) {
 
   manager.on("error", (player, error) => {
     console.error(`[LavalinkManager] Error:`, error);
+  });
+
+  // Bridge lavalink-client v2 events to legacy bot player events
+  manager.on("trackStart", (player, track, payload) => {
+    manager.emit("playerStart", player, track, payload);
+  });
+
+  manager.on("trackEnd", (player, track, payload) => {
+    manager.emit("playerEnd", player, track, payload);
+  });
+
+  manager.on("queueEnd", (player, track, payload) => {
+    manager.emit("playerEmpty", player, track, payload);
+  });
+
+  manager.on("trackError", (player, track, payload) => {
+    manager.emit("playerError", player, "TrackLoadFailed", payload);
+  });
+
+  manager.on("trackStuck", (player, track, payload) => {
+    manager.emit("playerError", player, "TrackStuckEvent", payload);
   });
 
   client.manager = manager;

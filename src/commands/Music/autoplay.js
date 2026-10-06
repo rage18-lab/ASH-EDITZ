@@ -1,12 +1,4 @@
-const {
-  ContainerBuilder,
-  TextDisplayBuilder,
-  SeparatorBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  MessageFlags
-} = require("discord.js");
+const { EmbedBuilder } = require("discord.js");
 
 module.exports = {
   name: "autoplay",
@@ -55,22 +47,23 @@ module.exports = {
   async execute(message, args, client, prefix) {
     const player = client.manager.players.get(message.guild.id);
 
+    if (!player) {
+      const embed = new EmbedBuilder()
+        .setColor(client.config.color || "#00D4FF")
+        .setDescription(`**${client.emoji?.warn || "⚠️"} There is no active music player in this server.**`);
+      return message.reply({ embeds: [embed] });
+    }
+
     const currentStatus = player.data.get("autoplay") || false;
     const newStatus = !currentStatus;
     player.data.set("autoplay", newStatus);
 
-    const statusDisplay = new TextDisplayBuilder()
-      .setContent(
-        `**${client.emoji.check} Autoplay has been \`${newStatus ? "Enabled" : "Disabled"}\`.**`
+    const embed = new EmbedBuilder()
+      .setColor(newStatus ? "#10B981" : "#EF4444")
+      .setDescription(
+        `**${newStatus ? (client.emoji?.check || "✅") : (client.emoji?.cross || "❌")} Autoplay has been \`${newStatus ? "Enabled" : "Disabled"}\`.**`
       );
 
-    const container = new ContainerBuilder()
-      .addTextDisplayComponents(statusDisplay);
-
-    return message.reply({
-      components: [container],
-      flags: MessageFlags.IsComponentsV2
-    });
+    return message.reply({ embeds: [embed] });
   },
 };
-
