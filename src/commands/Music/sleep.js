@@ -80,7 +80,7 @@ module.exports = {
                 const member = guild?.members.cache.get(interaction.user.id);
                 if (member && member.voice.channel) {
                     await member.voice.disconnect("Sleep timer ended");
-                    const textChannel = client.channels.cache.get(player.textId);
+                    const textChannel = client.channels.cache.get(player.textChannelId);
                     if (textChannel) {
                         const sleepDisplay = new TextDisplayBuilder().setContent(`**${client.emoji.info} Timer ended - ${interaction.user} disconnected.**`);
                         const sleepContainer = new ContainerBuilder().addTextDisplayComponents(sleepDisplay);
@@ -235,7 +235,7 @@ module.exports = {
                 if (member && member.voice.channel) {
                     await member.voice.disconnect("Sleep timer ended");
 
-                    const textChannel = client.channels.cache.get(player.textId);
+                    const textChannel = client.channels.cache.get(player.textChannelId);
                     if (textChannel) {
                         const sleepDisplay = new TextDisplayBuilder()
                             .setContent(`**${client.emoji.info} Timer ended - ${message.author} disconnected.**`);

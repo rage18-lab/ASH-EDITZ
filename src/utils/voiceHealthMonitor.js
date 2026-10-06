@@ -62,7 +62,7 @@ class VoiceHealthMonitor {
                 return;
             }
 
-            const voiceChannel = guild.channels.cache.get(player.voiceId);
+            const voiceChannel = guild.channels.cache.get(player.voiceChannelId);
             if (!voiceChannel) {
                 this.stopMonitoring(player.guildId);
                 return;
@@ -144,10 +144,10 @@ class VoiceHealthMonitor {
             }
 
 
-            if (botMember.voice.channelId !== player.voiceId) {
+            if (botMember.voice.channelId !== player.voiceChannelId) {
                 const twoFourSeven = this.client.db.twofourseven.get(player.guildId);
 
-                if (twoFourSeven && twoFourSeven.voiceId === player.voiceId) {
+                if (twoFourSeven && twoFourSeven.voiceId === player.voiceChannelId) {
                     this.client.logger?.log(
                         `[VoiceHealth] Bot in different VC but 247 enabled, updating player for guild ${player.guildId}`,
                         'log'
@@ -192,7 +192,7 @@ class VoiceHealthMonitor {
                 const guildPrefix = this.client.db.prefixes.get(player.guildId);
                 const prefix = guildPrefix?.prefix || this.client.prefix;
                 await this.client.rest
-                    .put(`/channels/${player.voiceId}/voice-status`, {
+                    .put(`/channels/${player.voiceChannelId}/voice-status`, {
                         body: { status: `use **${prefix}play** to add songs` },
                     })
                     .catch(() => null);
@@ -238,7 +238,7 @@ class VoiceHealthMonitor {
                 'log'
             );
 
-            if (player && player.voiceId) {
+            if (player && player.voiceChannelId) {
                 try {
                     if (player.data) player.data.lastActivityTime = Date.now();
 
@@ -251,7 +251,7 @@ class VoiceHealthMonitor {
                             const guildPrefix = this.client.db.prefixes.get(guild.id);
                             const prefix = guildPrefix?.prefix || this.client.prefix;
                             await this.client.rest
-                                .put(`/channels/${player.voiceId}/voice-status`, {
+                                .put(`/channels/${player.voiceChannelId}/voice-status`, {
                                     body: { status: `use **${prefix}play** to add songs` },
                                 })
                                 .catch(() => null);
@@ -313,7 +313,7 @@ class VoiceHealthMonitor {
     async updateVoiceState(player, track) {
         try {
             await this.client.rest
-                .put(`/channels/${player.voiceId}/voice-status`, {
+                .put(`/channels/${player.voiceChannelId}/voice-status`, {
                     body: { status: `${this.client.emoji.dance} Playing **${track.title}**` },
                 })
                 .catch(() => null);

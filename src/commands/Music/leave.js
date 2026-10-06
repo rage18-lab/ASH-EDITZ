@@ -73,7 +73,7 @@ module.exports = {
     const twoFourSeven = client.db.twofourseven.get(message.guild.id);
 
     client.rest
-      .put(`/channels/${player.voiceId}/voice-status`, { body: { status: `` } })
+      .put(`/channels/${player.voiceChannelId}/voice-status`, { body: { status: `` } })
       .catch(() => null);
 
     await safeDestroyPlayer(player);

@@ -108,7 +108,7 @@ module.exports = {
       });
 
       collector.on("collect", async (btnInteraction) => {
-        if (!btnInteraction.member?.voice?.channel || btnInteraction.member.voice.channel.id !== player.voiceId) {
+        if (!btnInteraction.member?.voice?.channel || btnInteraction.member.voice.channel.id !== player.voiceChannelId) {
           return btnInteraction.reply({ content: `**${client.emoji.warn} You must be in the same voice channel.**`, ephemeral: true });
         }
 

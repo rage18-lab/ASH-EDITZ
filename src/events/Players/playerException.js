@@ -15,7 +15,7 @@ module.exports = {
 
       const guild = client.guilds.cache.get(player.guildId);
       if (!guild) return;
-      const channel = client.channels.cache.get(player.textId);
+      const channel = client.channels.cache.get(player.textChannelId);
       const currentTrack = player.queue.current;
 
       if (reason.exception?.cause?.includes("ScriptExtractionException")) {
@@ -110,6 +110,7 @@ module.exports = {
             if (client.manager.players.has(player.guildId)) {
               client.manager.players.delete(player.guildId);
             }
+          }
         }
       }
     } catch (err) {

@@ -7,7 +7,7 @@ module.exports = {
       const guildPrefix = client.db.prefixes.get(player.guildId);
       const prefix = guildPrefix?.prefix || client.prefix;
       await client.rest
-        .put(`/channels/${player.voiceId}/voice-status`, {
+        .put(`/channels/${player.voiceChannelId}/voice-status`, {
           body: { status: `use **${prefix}play** to add songs` },
         })
         .catch(() => null);

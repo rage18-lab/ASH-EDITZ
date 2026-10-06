@@ -34,7 +34,7 @@ module.exports = {
     const prefix = guildPrefix?.prefix || client.prefix;
 
     client.rest
-      .put(`/channels/${player.voiceId}/voice-status`, {
+      .put(`/channels/${player.voiceChannelId}/voice-status`, {
         body: { status: `use **${prefix}play** to add songs` },
       })
       .catch(() => null);

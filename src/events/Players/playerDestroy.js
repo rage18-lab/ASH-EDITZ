@@ -18,9 +18,9 @@ module.exports = {
       const name = guild.name;
       const web1 = new WebhookClient({ url: player_delete });
 
-      if (player.voiceId) {
+      if (player.voiceChannelId) {
         try {
-          await client.rest.put(`/channels/${player.voiceId}/voice-status`, { body: { status: `` } });
+          await client.rest.put(`/channels/${player.voiceChannelId}/voice-status`, { body: { status: `` } });
         } catch (err) {
         }
       }

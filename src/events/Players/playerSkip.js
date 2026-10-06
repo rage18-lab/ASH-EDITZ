@@ -21,7 +21,7 @@ module.exports = {
         player.queue.previous.push(player.queue.current);
       }
 
-      const channel = client.channels.cache.get(player.textId);
+      const channel = client.channels.cache.get(player.textChannelId);
       if (!channel) return;
 
       const messages = await channel.messages.fetch({ limit: 20 });

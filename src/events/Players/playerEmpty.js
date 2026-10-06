@@ -16,7 +16,7 @@ module.exports = {
 
     try {
       await client.rest
-        .put(`/channels/${player.voiceId}/voice-status`, {
+        .put(`/channels/${player.voiceChannelId}/voice-status`, {
           body: { status: `use **${prefix}play** to add songs` },
         })
         .catch(() => { });
@@ -49,7 +49,7 @@ module.exports = {
     if (autoplay) {
       return;
     }
-    const vchannel = guild.channels.cache.get(player.voiceId);
+    const vchannel = guild.channels.cache.get(player.voiceChannelId);
 
     if (vchannel) {
       const existingTimeout = player.data.get("disconnectTimeout");
@@ -84,7 +84,7 @@ module.exports = {
             .addSeparatorComponents(separator)
             .addTextDisplayComponents(infoDisplay);
 
-          client.channels.cache.get(player.textId)?.send({
+          client.channels.cache.get(player.textChannelId)?.send({
             components: [container],
             flags: MessageFlags.IsComponentsV2
           }).catch(() => null);

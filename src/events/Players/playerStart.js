@@ -116,7 +116,7 @@ function buildNowPlayingContainer(client, track, paused) {
 
 async function sendNowPlaying(client, player, track) {
   try {
-    const channel = client.channels.cache.get(player.textId);
+    const channel = client.channels.cache.get(player.textChannelId);
     if (!channel) {
       return null;
     }
@@ -358,7 +358,7 @@ function setupMessageCollector(client, player, message) {
 
     collector.on("collect", async (interaction) => {
       try {
-        if (!interaction.member?.voice?.channelId || interaction.member.voice.channelId !== player.voiceId) {
+        if (!interaction.member?.voice?.channelId || interaction.member.voice.channelId !== player.voiceChannelId) {
           const display = new TextDisplayBuilder()
             .setContent(`**${client.emoji.warn} You must be in the same voice channel as the bot.**`);
           const container = new ContainerBuilder()
@@ -395,7 +395,7 @@ function setupMessageCollector(client, player, message) {
 
 async function updateVoiceStatus(client, player, track) {
   try {
-    if (!player.voiceId) {
+    if (!player.voiceChannelId) {
       return;
     }
 
@@ -404,7 +404,7 @@ async function updateVoiceStatus(client, player, track) {
     }
 
     await client.rest
-      .put(`/channels/${player.voiceId}/voice-status`, {
+      .put(`/channels/${player.voiceChannelId}/voice-status`, {
         body: { status: `${client.emoji.dance} Playing **${track.title}**` },
       })
       .catch((err) => {

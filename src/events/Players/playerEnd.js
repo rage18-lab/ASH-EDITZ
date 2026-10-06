@@ -264,7 +264,7 @@ module.exports = {
         if (!player.playing && !player.paused) await player.play();
       } else {
         console.log(`[Autoplay] No tracks found for guild ${player.guildId}, ending autoplay`);
-        const channel = client.channels.cache.get(player.textId);
+        const channel = client.channels.cache.get(player.textChannelId);
         if (channel) {
           const display = new TextDisplayBuilder().setContent(
             `**${client.emoji.info} Autoplay could not find any more similar tracks. Queue has ended.**`

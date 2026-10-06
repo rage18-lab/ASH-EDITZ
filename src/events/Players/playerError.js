@@ -16,7 +16,7 @@ module.exports = {
       switch (type) {
         case 'TrackStuckEvent':
           {
-            const channel = client.channels.cache.get(player.textId);
+            const channel = client.channels.cache.get(player.textChannelId);
             if (channel) {
               const stuckDisplay = new TextDisplayBuilder()
                 .setContent(
@@ -39,7 +39,7 @@ module.exports = {
 
         case 'TrackLoadFailed':
           {
-            const channel = client.channels.cache.get(player.textId);
+            const channel = client.channels.cache.get(player.textChannelId);
             if (channel) {
               const loadFailDisplay = new TextDisplayBuilder()
                 .setContent(
@@ -61,7 +61,7 @@ module.exports = {
           }
 
         default:
-          const channel = client.channels.cache.get(player.textId);
+          const channel = client.channels.cache.get(player.textChannelId);
           if (channel) {
             const errorDisplay = new TextDisplayBuilder()
               .setContent(

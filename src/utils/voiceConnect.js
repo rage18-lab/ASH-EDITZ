@@ -5,7 +5,7 @@ async function updateVoiceChannel(client, player, restore = false) {
         const vcStatus = client.db.vcstatus.get(player.guildId);
         if (!vcStatus) return;
 
-        const channel = client.channels.cache.get(player.voiceId);
+        const channel = client.channels.cache.get(player.voiceChannelId);
         if (!channel || !channel.manageable) return;
 
         if (restore) {
@@ -24,11 +24,11 @@ module.exports = {
         try {
             const is247 = client.db.twofourseven.get(message.guild.id);
 
-            if (player.connected && player.voiceId === message.member.voice.channel.id) {
+            if (player.connected && player.voiceChannelId === message.member.voice.channel.id) {
                 return true;
             }
 
-            if (player.connected && player.voiceId !== message.member.voice.channel.id) {
+            if (player.connected && player.voiceChannelId !== message.member.voice.channel.id) {
                 if (is247) {
                     throw new Error('Bot is in 24/7 mode. Please join the bot\'s voice channel');
                 } else {

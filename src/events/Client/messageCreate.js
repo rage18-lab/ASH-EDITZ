@@ -279,7 +279,7 @@ module.exports = {
       }).catch(() => null);
     }
 
-    if (command.sameVoiceChannel && player && message.member.voice.channel.id !== player.voiceId) {
+    if (command.sameVoiceChannel && player && message.member.voice.channel.id !== player.voiceChannelId) {
       const sameVcDisplay = new TextDisplayBuilder()
         .setContent(`**${client.emoji.warn} You must be in the same voice channel as me.**`);
 

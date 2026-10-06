@@ -148,7 +148,7 @@ module.exports = {
 
     collector.on("collect", async (interaction) => {
       // Must be in same VC
-      if (!interaction.member?.voice?.channelId || interaction.member.voice.channelId !== player.voiceId) {
+      if (!interaction.member?.voice?.channelId || interaction.member.voice.channelId !== player.voiceChannelId) {
         const d = new TextDisplayBuilder().setContent(`**${client.emoji.warn} Join the voice channel first!**`);
         const c = new ContainerBuilder().addTextDisplayComponents(d);
         return interaction.reply({ components: [c], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
