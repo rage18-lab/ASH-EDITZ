@@ -108,6 +108,7 @@ module.exports = {
             volume: 80,
             deaf: true,
           });
+          await player.connect();
         } catch (createError) {
           console.error('Failed to create player:', createError);
 

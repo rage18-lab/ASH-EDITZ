@@ -220,6 +220,10 @@ module.exports = {
         }
       }
 
+      if (!player.connected) {
+        await player.connect();
+      }
+
       let query = interaction.options.getString("song").trim();
       query = query.replace(/[<>]/g, '');
 
@@ -745,6 +749,10 @@ console.log(`[Music] Successfully recreated player for guild ${message.guild.id}
         if (player.textChannelId !== message.channel.id) {
           player.textChannelId = message.channel.id;
         }
+      }
+
+      if (!player.connected) {
+        await player.connect();
       }
 
       const currentQueueSize = player.queue.size;

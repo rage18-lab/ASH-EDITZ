@@ -57,17 +57,15 @@ async function recreatePlayer(client, guildId, voiceChannelId, textChannelId) {
 
         const newPlayer = await client.manager.createPlayer({
             guildId: guildId,
-            voiceChannelId: voiceId,
-            textChannelId: textId,
+            voiceChannelId: voiceChannelId,
+            textChannelId: textChannelId,
             volume: 80,
             deaf: true,
         });
-        await newPlayer.connect();
- await newPlayer.connect();
-if (!newPlayer) {
+        if (!newPlayer) {
             throw new Error("lavalink-client failed to create a new player object");
         }
-
+        await newPlayer.connect();
         return newPlayer;
     } catch (error) {
         console.error(`Error recreating player:`, error);
@@ -84,13 +82,15 @@ if (!newPlayer) {
             console.log(`[Music] ${isRestError ? 'RestError' : 'Fetch error'} in recreatePlayer, retrying in ${waitMs}ms...`);
             await new Promise(resolve => setTimeout(resolve, waitMs));
             try {
-                return await client.manager.createPlayer({
+                const retryPlayer = await client.manager.createPlayer({
                     guildId: guildId,
-                    voiceChannelId: voiceId,
-                    textChannelId: textId,
+                    voiceChannelId: voiceChannelId,
+                    textChannelId: textChannelId,
                     volume: 80,
                     deaf: true,
                 });
+                await retryPlayer.connect();
+                return retryPlayer;
             } catch (retryError) {
                 console.error(`[Music] Retry in recreatePlayer failed:`, retryError);
                 throw retryError;
