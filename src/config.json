@@ -28,9 +28,9 @@
     {
       "id": "serenetia",
       "host": "lavalinkv4.serenetia.com",
-      "port": 80,
+      "port": 443,
       "authorization": "https://dsc.gg/ajidevserver",
-      "secure": false
+      "secure": true
     }
   ],
   "node_options": {
