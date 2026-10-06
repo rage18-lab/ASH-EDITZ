@@ -1,98 +1,157 @@
 const {
-  EmbedBuilder,
-  
+  ContainerBuilder,
+  TextDisplayBuilder,
+  SeparatorBuilder,
+  SectionBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  MessageFlags,
 } = require("discord.js");
 
-const medals = ["🥇", "🥈", "🥉"];
+const MEDALS   = ["🥇", "🥈", "🥉"];
+const RANKS    = ["👑", "⭐", "💫", "🔥", "🎵", "🎶", "🎤", "🎸", "🎺", "🎻"];
+const BAR_LEN  = 12;
+
+function buildBar(value, max) {
+  if (!max || max === 0) return "░".repeat(BAR_LEN);
+  const filled = Math.round((value / max) * BAR_LEN);
+  return "█".repeat(Math.max(0, filled)) + "░".repeat(Math.max(0, BAR_LEN - filled));
+}
+
+function fmtNum(n) {
+  return (n || 0).toLocaleString();
+}
 
 module.exports = {
   name: "lb",
   category: "Music",
-  description: "Show the music leaderboard — top users by songs played",
+  description: "Show the top music listeners leaderboard",
   args: false,
   usage: "",
-  aliases: ["leaderboard", "topp", "musiclb"],
+  aliases: ["leaderboard", "topp", "musiclb", "toplisteners"],
   userPerms: [],
   owner: false,
   slashOptions: [],
 
   async slashExecute(interaction, client) {
     await interaction.deferReply();
-    const interactionWrapper = {
+    const wrapper = {
       guild: interaction.guild,
       channel: interaction.channel,
       author: interaction.user,
       member: interaction.member,
       reply: async (options) => interaction.editReply(options),
     };
-    return this.execute(interactionWrapper, [], client, client.prefix);
+    return this.execute(wrapper, [], client, client.prefix);
   },
 
   async execute(message, args, client, prefix) {
-    // Fetch top 10 users
     let topUsers = [];
     try {
       topUsers = client.db.musicStats.getTopUsers(10);
     } catch (err) {
-      console.error("[LB] Failed to fetch leaderboard:", err);
+      console.error("[LB] fetch error:", err);
     }
 
+    // ── Empty State ────────────────────────────────────────────────────────
     if (!topUsers || topUsers.length === 0) {
-      const embed = new EmbedBuilder().setDescription(
-          `### ${client.emoji.info} Music Leaderboard\n` +
-          `> No songs have been played yet. Start playing music to appear on the leaderboard!`
-        ).setColor(client.config.color || "#00D4FF");
-      
-      return message.reply({ embeds: [embed] });
+      const display = new TextDisplayBuilder()
+        .setContent(
+          `### 🏆 Music Leaderboard\n\n` +
+          `${client.emoji.info || "ℹ️"} **No stats yet!**\n` +
+          `> Use \`${prefix}play\` to start listening and climb the ranks!`
+        );
+      const container = new ContainerBuilder().addTextDisplayComponents(display);
+      return message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
     }
 
-    // Resolve usernames from Discord
-    const rows = [];
-    for (let i = 0; i < topUsers.length; i++) {
-      const entry = topUsers[i];
-      let username = `Unknown User`;
+    // ── Fetch totals ───────────────────────────────────────────────────────
+    let totalSongsPlayed = 0;
+    let totalUsers = 0;
+    try {
+      const all = client.db.musicStats.getTopUsers(10000);
+      totalUsers = all.length;
+      totalSongsPlayed = all.reduce((s, u) => s + (u.songsPlayed || 0), 0);
+    } catch (_) {}
 
-      try {
-        const user = await client.users.fetch(entry.userId).catch(() => null);
-        if (user) username = user.username;
-      } catch (_) {}
+    // ── Fetch usernames concurrently ───────────────────────────────────────
+    const fetchedUsers = await Promise.all(
+      topUsers.map(entry =>
+        client.users.fetch(entry.userId).catch(() => null)
+      )
+    );
 
-      const rank = i + 1;
-      const medal = medals[i] ?? `**\`#${rank}\`**`;
-      const isAuthor = entry.userId === (message.author?.id ?? "");
-      const nameStr = isAuthor ? `**${username}** (You)` : `**${username}**`;
-      const lastSong = entry.lastSong
-        ? `\n${client.emoji.dot} Last: *${entry.lastSong.slice(0, 40)}${entry.lastSong.length > 40 ? "…" : ""}*`
-        : "";
-
-      rows.push(`${medal} ${nameStr} — ${client.emoji.hastag} \`${entry.songsPlayed}\` songs${lastSong}`);
-    }
-
-    // Find caller's own rank
-    let callerRankText = "";
+    // ── Caller rank ────────────────────────────────────────────────────────
+    let callerRank = null, callerSongs = 0;
     try {
       const authorId = message.author?.id;
       if (authorId) {
-        const allTop = client.db.musicStats.getTopUsers(1000);
-        const callerIdx = allTop.findIndex((u) => u.userId === authorId);
-        if (callerIdx >= 10 && callerIdx !== -1) {
-          const callerEntry = allTop[callerIdx];
-          callerRankText = `\n${client.emoji.arrowright} Your rank: **#${callerIdx + 1}** — \`${callerEntry.songsPlayed}\` songs played`;
+        const all = client.db.musicStats.getTopUsers(10000);
+        const idx = all.findIndex(u => u.userId === authorId);
+        if (idx !== -1) {
+          callerRank  = idx + 1;
+          callerSongs = all[idx].songsPlayed || 0;
         }
       }
     } catch (_) {}
 
-    const embed = new EmbedBuilder().setTitle(`${client.emoji.hastag} Music Leaderboard — Top Listeners`).setColor(client.config.color || "#00D4FF");
+    const maxSongs = topUsers[0]?.songsPlayed || 1;
 
-    
+    // ── Build player cards ─────────────────────────────────────────────────
+    const lines = topUsers.map((entry, i) => {
+      const user       = fetchedUsers[i];
+      const username   = user?.username || "Unknown User";
+      const medal      = MEDALS[i] || RANKS[i] || `\`#${i + 1}\``;
+      const songs      = entry.songsPlayed || 0;
+      const bar        = buildBar(songs, maxSongs);
+      const isCaller   = entry.userId === (message.author?.id ?? "");
+      const callerTag  = isCaller ? " ⭐ **You**" : "";
+      const lastSong   = entry.lastSong
+        ? `\n> └ 🎵 *${entry.lastSong.slice(0, 40)}${entry.lastSong.length > 40 ? "…" : ""}*`
+        : "";
 
-    embed.setDescription(rows.join("\n") + callerRankText);
+      return (
+        `${medal} **${username}**${callerTag} — \`${fmtNum(songs)} plays\`\n` +
+        `> \`${bar}\`${lastSong}`
+      );
+    });
 
-    embed.setFooter({ text: "Stats update every time a song starts playing." });
+    // ── Stats summary ──────────────────────────────────────────────────────
+    const statsLine =
+      `📊 **${fmtNum(totalSongsPlayed)}** total plays  •  ` +
+      `👥 **${fmtNum(totalUsers)}** listeners  •  ` +
+      `🏅 Top **${topUsers.length}** shown`;
 
-    
+    // ── Caller section ─────────────────────────────────────────────────────
+    let callerLine = "";
+    if (callerRank) {
+      callerLine = `\n\n> 📍 **Your rank:** \`#${callerRank}\` with **${fmtNum(callerSongs)} plays**`;
+    } else {
+      callerLine = `\n\n> 📍 Play some music to appear on this board!`;
+    }
 
-    return message.reply({ embeds: [embed] });
+    // ── Assemble container ─────────────────────────────────────────────────
+    const headerDisplay = new TextDisplayBuilder()
+      .setContent(`### 🏆 Music Leaderboard — Top Listeners\n${statsLine}`);
+
+    const sep = new SeparatorBuilder();
+
+    const listDisplay = new TextDisplayBuilder()
+      .setContent(lines.join("\n\n") + callerLine);
+
+    const footerDisplay = new TextDisplayBuilder()
+      .setContent(
+        `-# Requested by ${message.author?.username || "User"}  •  Updated just now`
+      );
+
+    const container = new ContainerBuilder()
+      .addTextDisplayComponents(headerDisplay)
+      .addSeparatorComponents(sep)
+      .addTextDisplayComponents(listDisplay)
+      .addSeparatorComponents(new SeparatorBuilder())
+      .addTextDisplayComponents(footerDisplay);
+
+    return message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
   },
 };
-

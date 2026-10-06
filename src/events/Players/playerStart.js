@@ -14,342 +14,374 @@ const {
 } = require("discord.js");
 const { player_create } = require("../../config").Webhooks;
 
-const createButtonRow = (client, paused) => {
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function formatDuration(ms) {
+  if (!ms || ms === 0) return "🔴 LIVE";
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  const h = Math.floor(m / 60);
+  if (h > 0) return `${h}:${String(m % 60).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+  return `${m}:${String(s % 60).padStart(2, "0")}`;
+}
+
+function cleanAuthor(author) {
+  if (!author) return "Unknown Artist";
+  return author.replace(/\s*-\s*Topic\s*$/i, "").trim();
+}
+
+function truncate(str, max = 40) {
+  if (!str) return "Unknown";
+  return str.length <= max ? str : str.slice(0, max - 1) + "…";
+}
+
+function getHQThumbnail(url) {
+  if (!url) return null;
+  if (url.includes("i.ytimg.com") || url.includes("img.youtube.com")) {
+    const m = url.match(/vi\/([^/]+)\//);
+    if (m?.[1]) return `https://i.ytimg.com/vi/${m[1]}/maxresdefault.jpg`;
+  }
+  return url;
+}
+
+function buildProgressBar(position, duration, barLen = 20) {
+  if (!duration || duration === 0) return { bar: "─".repeat(barLen), pos: "Live", total: "∞" };
+  const pct = Math.min(position / duration, 1);
+  const filled = Math.round(barLen * pct);
+  const bar = "━".repeat(filled) + "🔵" + "─".repeat(Math.max(0, barLen - filled));
+  return { bar, pos: formatDuration(position), total: formatDuration(duration) };
+}
+
+function getPlatformEmoji(uri = "") {
+  if (uri.includes("spotify.com")) return "🟢";
+  if (uri.includes("soundcloud.com")) return "🟠";
+  if (uri.includes("deezer.com")) return "💜";
+  if (uri.includes("apple")) return "🍎";
+  return "🎵"; // YouTube / default
+}
+
+function getLoopLabel(loopMode) {
+  if (!loopMode || loopMode === "none") return null;
+  if (loopMode === "track") return "🔂 Track Loop";
+  if (loopMode === "queue") return "🔁 Queue Loop";
+  return `🔁 ${loopMode}`;
+}
+
+// ─── Button Rows ─────────────────────────────────────────────────────────────
+
+function buildControlRow(client, paused) {
   return new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId("previous")
+      .setCustomId("np_previous")
       .setEmoji(client.emoji.previous)
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
-      .setCustomId(paused ? "resume" : "pause")
+      .setCustomId(paused ? "np_resume" : "np_pause")
       .setEmoji(paused ? client.emoji.play : client.emoji.pause)
-      .setStyle(ButtonStyle.Secondary),
+      .setStyle(paused ? ButtonStyle.Success : ButtonStyle.Primary),
     new ButtonBuilder()
-      .setCustomId("skip")
+      .setCustomId("np_skip")
       .setEmoji(client.emoji.skip)
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
-      .setCustomId("like")
+      .setCustomId("np_like")
       .setEmoji(client.emoji.like)
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
-      .setCustomId("stop")
+      .setCustomId("np_stop")
       .setEmoji(client.emoji.stop)
+      .setStyle(ButtonStyle.Danger)
+  );
+}
+
+function buildSecondaryRow(client, player) {
+  const loopMode = player.repeatMode || player.loop || "none";
+  const isLooping = loopMode !== "none";
+  const isShuffled = player.queue?.shuffled || false;
+
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId("np_loop")
+      .setLabel(loopMode === "track" ? "Loop: Track" : loopMode === "queue" ? "Loop: Queue" : "Loop: Off")
+      .setEmoji("🔁")
+      .setStyle(isLooping ? ButtonStyle.Success : ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId("np_shuffle")
+      .setLabel(isShuffled ? "Shuffle: On" : "Shuffle: Off")
+      .setEmoji("🔀")
+      .setStyle(isShuffled ? ButtonStyle.Success : ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId("np_voldown")
+      .setEmoji(client.emoji.voldown)
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId("np_volup")
+      .setEmoji(client.emoji.volup)
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId("np_queue")
+      .setLabel("Queue")
+      .setEmoji("📋")
       .setStyle(ButtonStyle.Secondary)
   );
-};
-
-function formatDuration(ms) {
-  if (!ms || ms === 0) return 'Live';
-
-  const seconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-
-  if (hours > 0) {
-    return `${hours}:${String(minutes % 60).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
-  }
-  return `${minutes}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
-function cleanAuthorName(author) {
-  if (!author) return 'Unknown Artist';
+// ─── Container Builder ───────────────────────────────────────────────────────
 
-  return author.replace(/\s*-\s*Topic\s*$/i, '').trim();
-}
-
-function truncateTitle(title, maxLength = 30) {
-  if (!title) return 'Unknown Title';
-  if (title.length <= maxLength) return title;
-  return title.substring(0, maxLength) + '...';
-}
-
-function getCleanThumbnail(thumbnailUrl) {
-  if (!thumbnailUrl) return null;
-
-  if (thumbnailUrl.includes('i.ytimg.com') || thumbnailUrl.includes('img.youtube.com')) {
-    const videoIdMatch = thumbnailUrl.match(/vi\/([^\/]+)\//);
-    if (videoIdMatch && videoIdMatch[1]) {
-      return `https://i.ytimg.com/vi/${videoIdMatch[1]}/maxresdefault.jpg`;
-    }
-  }
-
-  return thumbnailUrl;
-}
-
-function buildNowPlayingContainer(client, track, paused) {
-  const info = track.info || track; // support both track.info.* and flat track.*
-  const title = info.title || 'Unknown Title';
-  const uri = info.uri || info.url || '#';
-  const author = info.author || 'Unknown Artist';
-  const duration = info.duration || info.length || 0;
-  const artworkUrl = info.artworkUrl || info.thumbnail || info.image;
+function buildNowPlayingContainer(client, track, player) {
+  const info    = track.info || track;
+  const title   = info.title   || "Unknown Title";
+  const uri     = info.uri     || info.url || "#";
+  const author  = info.author  || "Unknown Artist";
+  const dur     = info.duration || info.length || 0;
+  const artwork = info.artworkUrl || info.thumbnail || info.image;
   const requester = track.requester;
+  const paused  = player?.paused || false;
+
+  const position    = player?.position || 0;
+  const { bar, pos, total } = buildProgressBar(position, dur);
+  const platform    = getPlatformEmoji(uri);
+  const loopLabel   = getLoopLabel(player?.repeatMode || player?.loop);
+  const queueCount  = player?.queue?.length ?? 0;
+  const volume      = player?.volume ?? 100;
+
+  // Build status badges
+  const badges = [];
+  if (paused)    badges.push("⏸ Paused");
+  if (loopLabel) badges.push(loopLabel);
+  if (queueCount > 0) badges.push(`📋 ${queueCount} in queue`);
+  const badgeLine = badges.length ? `\n${badges.join("  •  ")}` : "";
 
   const titleDisplay = new TextDisplayBuilder()
-    .setContent(`### [${truncateTitle(title)}](${uri})`);
+    .setContent(`### ${platform} [${truncate(title, 45)}](${uri})${badgeLine}`);
 
   const infoDisplay = new TextDisplayBuilder()
     .setContent(
-      `> - **Author:** [${cleanAuthorName(author)}](${uri})\n` +
-      `> - **Duration:** \`${info.isStream ? 'LIVE' : formatDuration(duration)}\`\n` +
-      `> - **Requester:** [${requester?.username || 'Unknown'}](https://discord.com/users/${requester?.id || '0'})`
+      `> 🎤 **Artist:** ${cleanAuthor(author)}\n` +
+      `> 👤 **Requested by:** [${requester?.username || "Unknown"}](https://discord.com/users/${requester?.id || "0"})\n` +
+      `> 🔊 **Volume:** ${volume}%  •  ⏱ **Duration:** \`${total}\`\n` +
+      `> \`${pos}\` ${bar} \`${total}\``
     );
 
   const container = new ContainerBuilder();
 
-  const cleanThumbnail = getCleanThumbnail(artworkUrl);
-  if (cleanThumbnail) {
+  const cleanThumb = getHQThumbnail(artwork);
+  if (cleanThumb) {
     const section = new SectionBuilder()
       .addTextDisplayComponents(titleDisplay, infoDisplay)
-      .setThumbnailAccessory((thumbnail) => thumbnail.setURL(cleanThumbnail));
+      .setThumbnailAccessory((t) => t.setURL(cleanThumb));
     container.addSectionComponents(section);
   } else {
     container.addTextDisplayComponents(titleDisplay, infoDisplay);
   }
 
-  const buttonRow = createButtonRow(client, paused);
-  container.addActionRowComponents(buttonRow);
+  container.addSeparatorComponents(new SeparatorBuilder());
+  container.addActionRowComponents(buildControlRow(client, paused));
+  container.addActionRowComponents(buildSecondaryRow(client, player));
 
   return container;
 }
 
+// ─── Send / Update ───────────────────────────────────────────────────────────
+
 async function sendNowPlaying(client, player, track) {
   try {
     const channel = client.channels.cache.get(player.textChannelId);
-    if (!channel) {
-      return null;
-    }
+    if (!channel) return null;
 
-    const container = buildNowPlayingContainer(client, track, player.paused || false);
-
+    const container = buildNowPlayingContainer(client, track, player);
     try {
       const message = await channel.send({
         components: [container],
         flags: MessageFlags.IsComponentsV2
       });
-
       player.data?.set("currentTrack", track);
       return message;
-    } catch (embedError) {
+    } catch (e) {
       return null;
     }
-  } catch (error) {
+  } catch (e) {
     return null;
   }
 }
 
 async function updateNowPlayingButtons(client, player, paused) {
   try {
-    const nowPlayingMsg = player.data?.get("message");
-    if (!nowPlayingMsg) {
-      return;
-    }
-
+    const msg   = player.data?.get("message");
+    if (!msg) return;
     const track = player.data?.get("currentTrack") || player.queue?.current;
-    if (!track) {
-      return;
-    }
+    if (!track) return;
 
-    const container = buildNowPlayingContainer(client, track, paused);
-
-    await nowPlayingMsg.edit({
-      components: [container],
-      flags: MessageFlags.IsComponentsV2
-    }).catch((err) => {
-    });
-
-  } catch (error) {
-  }
+    // Sync paused state onto player obj for container builder
+    const fakePl = Object.assign(Object.create(Object.getPrototypeOf(player)), player, { paused });
+    const container = buildNowPlayingContainer(client, track, fakePl);
+    await msg.edit({ components: [container], flags: MessageFlags.IsComponentsV2 }).catch(() => {});
+  } catch (_) {}
 }
+
+// ─── Button Interaction Handler ──────────────────────────────────────────────
 
 async function handleButtonInteraction(interaction, player, client) {
   try {
     switch (interaction.customId) {
-      case "pause":
-        if (player.paused) {
-          return interaction.deferUpdate();
-        }
 
+      // ── Playback ──────────────────────────────────────────────────────────
+      case "np_pause":
+        if (player.paused) return interaction.deferUpdate();
         player.pause(true);
         await updateNowPlayingButtons(client, player, true);
-        await interaction.deferUpdate();
-        break;
+        return interaction.deferUpdate();
 
-      case "resume":
-        if (!player.paused) {
-          return interaction.deferUpdate();
-        }
+      case "np_resume":
+        if (!player.paused) return interaction.deferUpdate();
         player.pause(false);
         await updateNowPlayingButtons(client, player, false);
-        await interaction.deferUpdate();
-        break;
+        return interaction.deferUpdate();
 
-      case "skip":
-        if (!player.queue?.current) {
-          return interaction.deferUpdate();
-        }
+      case "np_skip":
+        if (!player.queue?.current) return interaction.deferUpdate();
         player.skip();
-        await interaction.deferUpdate();
-        break;
+        return interaction.deferUpdate();
 
-      case "stop":
-        try {
-          player.queue?.clear();
-          if (player.setLoop) {
-            player.setLoop('none');
-          } else {
-            player.loop = 'none';
-          }
-          const { safeDestroyPlayer } = require("../../utils/playerUtils");
-          await safeDestroyPlayer(player);
-          await interaction.deferUpdate();
-        } catch (error) {
-          await interaction.deferUpdate();
-        }
-        break;
+      case "np_stop":
+        player.queue?.clear();
+        try { player.setLoop?.("none"); } catch (_) { player.loop = "none"; }
+        const { safeDestroyPlayer } = require("../../utils/playerUtils");
+        await safeDestroyPlayer(player);
+        return interaction.deferUpdate();
 
-      case "previous":
+      case "np_previous": {
         const history = player.data?.get("history") || [];
-
-        if (history.length === 0) {
-          const display = new TextDisplayBuilder()
-            .setContent(`**${client.emoji.info} No previous track found in history.**`);
-          const container = new ContainerBuilder()
-            .addTextDisplayComponents(display);
-          return interaction.reply({
-            components: [container],
-            flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
-          });
+        if (!history.length) {
+          return _ephemeralMsg(interaction, client, `${client.emoji.info} No previous track in history.`);
         }
-
-        const lastHistoryTrack = history[history.length - 1];
-
+        const prev = history[history.length - 1];
         try {
-          const result = await client.manager.search(lastHistoryTrack.uri, {
-            requester: interaction.user
-          });
-
-          if (result && result.tracks && result.tracks.length > 0) {
-            player.queue.unshift(result.tracks[0]);
+          const res = await client.manager.search(prev.uri, { requester: interaction.user });
+          if (res?.tracks?.length) {
+            player.queue.unshift(res.tracks[0]);
             history.pop();
             player.data?.set("history", history);
             player.skip();
           }
-        } catch (error) {
-          console.error("Error loading previous track:", error);
-        }
+        } catch (_) {}
+        return interaction.deferUpdate();
+      }
 
-        await interaction.deferUpdate();
-        break;
-
-      case "like":
-        const currentLikeTrack = player.queue?.current;
-        if (!currentLikeTrack) {
-          return interaction.deferUpdate();
-        }
-
+      // ── Like ─────────────────────────────────────────────────────────────
+      case "np_like": {
+        const cur = player.queue?.current;
+        if (!cur) return interaction.deferUpdate();
         try {
-          const songs = client.db.liked.get(interaction.user.id);
-          const alreadyLiked = songs.some(song => song.url === (currentLikeTrack.uri || currentLikeTrack.url));
-
-          if (alreadyLiked) {
-            const display = new TextDisplayBuilder()
-              .setContent(`**${client.emoji.info} \`${currentLikeTrack.title}\` is already in your favourite list.**`);
-            const container = new ContainerBuilder()
-              .addTextDisplayComponents(display);
-            return interaction.reply({
-              components: [container],
-              flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
-            });
-          } else {
-            songs.push({
-              title: currentLikeTrack.title,
-              url: currentLikeTrack.uri || currentLikeTrack.url,
-              duration: currentLikeTrack.length || currentLikeTrack.duration,
-              thumbnail: currentLikeTrack.thumbnail || currentLikeTrack.artworkUrl || currentLikeTrack.image,
-              author: currentLikeTrack.author,
-              addedAt: new Date().toISOString()
-            });
-
-            client.db.liked.set(interaction.user.id, songs);
-
-            const display = new TextDisplayBuilder()
-              .setContent(`**${client.emoji.check} Added \`${currentLikeTrack.title}\` to your favourite list.**`);
-            const container = new ContainerBuilder()
-              .addTextDisplayComponents(display);
-            return interaction.reply({
-              components: [container],
-              flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
-            });
+          const songs = client.db.liked.get(interaction.user.id) || [];
+          const already = songs.some(s => s.url === (cur.uri || cur.url));
+          if (already) {
+            return _ephemeralMsg(interaction, client, `${client.emoji.info} Already in your favourites!`);
           }
-        } catch (dbError) {
-          console.error('[Like Button] Error:', dbError);
-          const display = new TextDisplayBuilder()
-            .setContent(`**${client.emoji.cross} Failed to save song to favorites. Please try again.**`);
-          const container = new ContainerBuilder()
-            .addTextDisplayComponents(display);
-          return interaction.reply({
-            components: [container],
-            flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
-          }).catch(() => { });
+          songs.push({
+            title: cur.title, url: cur.uri || cur.url,
+            duration: cur.length || cur.duration,
+            thumbnail: cur.thumbnail || cur.artworkUrl || cur.image,
+            author: cur.author, addedAt: new Date().toISOString()
+          });
+          client.db.liked.set(interaction.user.id, songs);
+          return _ephemeralMsg(interaction, client, `${client.emoji.check} Added **${cur.title}** to favourites!`);
+        } catch (_) {
+          return _ephemeralMsg(interaction, client, `${client.emoji.cross} Failed to save. Try again.`);
         }
+      }
 
-        break;
+      // ── Loop ─────────────────────────────────────────────────────────────
+      case "np_loop": {
+        const modes = ["none", "track", "queue"];
+        const cur   = player.repeatMode || player.loop || "none";
+        const next  = modes[(modes.indexOf(cur) + 1) % modes.length];
+        try { player.setRepeatMode?.(next) || (player.repeatMode = next); } catch (_) { player.loop = next; }
+        const label = next === "none" ? "Loop disabled" : next === "track" ? "🔂 Looping this track" : "🔁 Looping whole queue";
+        await _ephemeralMsg(interaction, client, `${client.emoji.check} ${label}`);
+        // Refresh panel
+        const track = player.data?.get("currentTrack") || player.queue?.current;
+        if (track) {
+          const msg = player.data?.get("message");
+          if (msg) {
+            const c = buildNowPlayingContainer(client, track, player);
+            await msg.edit({ components: [c], flags: MessageFlags.IsComponentsV2 }).catch(() => {});
+          }
+        }
+        return;
+      }
+
+      // ── Shuffle ──────────────────────────────────────────────────────────
+      case "np_shuffle": {
+        if (player.queue?.shuffle) {
+          player.queue.shuffle();
+          await _ephemeralMsg(interaction, client, `${client.emoji.shuffle} Queue shuffled!`);
+        } else {
+          await _ephemeralMsg(interaction, client, `${client.emoji.info} Shuffle not supported on this player version.`);
+        }
+        return;
+      }
+
+      // ── Volume ───────────────────────────────────────────────────────────
+      case "np_voldown": {
+        const newVol = Math.max(0, (player.volume || 100) - 10);
+        await player.setVolume(newVol);
+        await _ephemeralMsg(interaction, client, `${client.emoji.voldown} Volume: **${newVol}%**`);
+        return;
+      }
+      case "np_volup": {
+        const newVol = Math.min(150, (player.volume || 100) + 10);
+        await player.setVolume(newVol);
+        await _ephemeralMsg(interaction, client, `${client.emoji.volup} Volume: **${newVol}%**`);
+        return;
+      }
+
+      // ── Queue Peek ───────────────────────────────────────────────────────
+      case "np_queue": {
+        const q = player.queue;
+        if (!q?.length) {
+          return _ephemeralMsg(interaction, client, `${client.emoji.info} Queue is empty.`);
+        }
+        const list = [...q].slice(0, 8).map((t, i) =>
+          `\`${i + 1}.\` [${(t.title || "Unknown").slice(0, 35)}](${t.uri}) — \`${formatDuration(t.length)}\``
+        ).join("\n");
+        const display = new TextDisplayBuilder().setContent(
+          `### 📋 Up Next (${q.length} tracks)\n${list}${q.length > 8 ? `\n*…and ${q.length - 8} more*` : ""}`
+        );
+        const c = new ContainerBuilder().addTextDisplayComponents(display);
+        return interaction.reply({ components: [c], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
+      }
 
       default:
-        const unknownDisplay = new TextDisplayBuilder()
-          .setContent(`**${client.emoji.cross} Unknown button interaction.**`);
-
-        const unknownContainer = new ContainerBuilder()
-          .addTextDisplayComponents(unknownDisplay);
-
-        await interaction.editReply({
-          components: [unknownContainer],
-          flags: MessageFlags.IsComponentsV2
-        });
-        break;
+        return interaction.deferUpdate();
     }
-  } catch (error) {
-    const display = new TextDisplayBuilder()
-      .setContent(`**${client.emoji.cross} An error occurred while processing your request.**`);
-    const container = new ContainerBuilder()
-      .addTextDisplayComponents(display);
+  } catch (err) {
+    console.error("[NowPlaying Button] Error:", err);
     if (!interaction.replied && !interaction.deferred) {
-      try {
-        await interaction.reply({
-          components: [container],
-          flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
-        });
-      } catch (replyError) {
-      }
-    } else {
-      try {
-        await interaction.editReply({
-          components: [container],
-          flags: MessageFlags.IsComponentsV2
-        });
-      } catch (editError) {
-      }
+      await _ephemeralMsg(interaction, client, `${client.emoji.cross} An error occurred.`).catch(() => {});
     }
   }
 }
 
+function _ephemeralMsg(interaction, client, text) {
+  const display = new TextDisplayBuilder().setContent(`**${text}**`);
+  const c = new ContainerBuilder().addTextDisplayComponents(display);
+  if (interaction.replied || interaction.deferred) {
+    return interaction.followUp({ components: [c], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral }).catch(() => {});
+  }
+  return interaction.reply({ components: [c], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral }).catch(() => {});
+}
+
+// ─── Collector ───────────────────────────────────────────────────────────────
+
 function setupMessageCollector(client, player, message) {
   try {
-    // Avoid duplicate collectors on the same message
     if (message._collectorActive) return;
     message._collectorActive = true;
 
-    const track = player.queue?.current;
-    const trackLength = track?.length || track?.duration || 0;
-
-    // For live/stream tracks (length === 0) use 6 hours.
-    // For normal tracks, add a 30s buffer so the collector doesn't die just before the song ends.
-    // Never go below 30 seconds.
-    const collectorTime = trackLength > 0
-      ? Math.max(trackLength + 30000, 30000)
-      : 6 * 60 * 60 * 1000; // 6 hours for streams
+    const track       = player.queue?.current;
+    const trackLen    = track?.length || track?.duration || 0;
+    const collectorTime = trackLen > 0 ? Math.max(trackLen + 30000, 30000) : 6 * 60 * 60 * 1000;
 
     const collector = message.createMessageComponentCollector({
       time: collectorTime,
@@ -359,116 +391,75 @@ function setupMessageCollector(client, player, message) {
     collector.on("collect", async (interaction) => {
       try {
         if (!interaction.member?.voice?.channelId || interaction.member.voice.channelId !== player.voiceChannelId) {
-          const display = new TextDisplayBuilder()
-            .setContent(`**${client.emoji.warn} You must be in the same voice channel as the bot.**`);
-          const container = new ContainerBuilder()
-            .addTextDisplayComponents(display);
-          return interaction.reply({
-            components: [container],
-            flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
-          });
+          return _ephemeralMsg(interaction, client, `${client.emoji.warn} You must be in the same voice channel as the bot.`);
         }
-
         await handleButtonInteraction(interaction, player, client);
-
-      } catch (interactionError) {
+      } catch (e) {
         if (!interaction.replied && !interaction.deferred) {
-          const display = new TextDisplayBuilder()
-            .setContent(`**${client.emoji.cross} An error occurred while processing your request.**`);
-          const container = new ContainerBuilder()
-            .addTextDisplayComponents(display);
-          await interaction.reply({
-            components: [container],
-            flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
-          }).catch(() => { });
+          await _ephemeralMsg(interaction, client, `${client.emoji.cross} An error occurred.`).catch(() => {});
         }
       }
     });
 
-    collector.on("end", () => {
-      message._collectorActive = false;
-    });
-
-  } catch (error) {
-  }
+    collector.on("end", () => { message._collectorActive = false; });
+  } catch (_) {}
 }
+
+// ─── Voice Status ────────────────────────────────────────────────────────────
 
 async function updateVoiceStatus(client, player, track) {
   try {
-    if (!player.voiceChannelId) {
-      return;
-    }
-
-    if (player.state === 'DESTROYED' || player.state === 'DISCONNECTED') {
-      return;
-    }
-
+    if (!player.voiceChannelId) return;
+    if (player.state === "DESTROYED" || player.state === "DISCONNECTED") return;
     await client.rest
       .put(`/channels/${player.voiceChannelId}/voice-status`, {
         body: { status: `${client.emoji.dance} Playing **${track.title}**` },
       })
-      .catch((err) => {
-        console.error('[VoiceStatus] Failed to update:', err.message || err);
-      });
-  } catch (error) {
-    console.error('[VoiceStatus] Exception:', error.message || error);
+      .catch((err) => console.error("[VoiceStatus]", err.message));
+  } catch (err) {
+    console.error("[VoiceStatus]", err.message);
   }
 }
+
+// ─── Main Event ──────────────────────────────────────────────────────────────
 
 module.exports = {
   name: "playerStart",
   run: async (client, player, track) => {
     try {
       const guild = client.guilds.cache.get(player.guildId);
-      if (!guild) {
-        return;
-      }
+      if (!guild) return;
 
       if (!player.data?.get("playerStarted")) {
         player.data?.set("playerStarted", true);
-
         if (player_create) {
           const webhook = new WebhookClient({ url: player_create });
-
           const embed = new EmbedBuilder()
             .setColor(client.color)
-            .setAuthor({
-              name: `Player Started`,
-              iconURL: client.user.displayAvatarURL()
-            })
+            .setAuthor({ name: "Player Started", iconURL: client.user.displayAvatarURL() })
             .setDescription(`**Server:** \`${guild.name}\`\n**ID:** \`${player.guildId}\``);
-
-          webhook.send({ embeds: [embed] }).catch(() => { });
+          webhook.send({ embeds: [embed] }).catch(() => {});
         }
       }
 
       const currentTrack = track || player.queue?.current;
-
       if (currentTrack) {
-        // Track leaderboard stats for the requester
+        // Track leaderboard stats
         try {
-          const requesterId = currentTrack.requester?.id;
-          if (requesterId) {
-            client.db.musicStats.increment(requesterId, currentTrack.title || '');
-          }
-        } catch (statsErr) {
-          console.error('[Stats] Failed to update music stats:', statsErr);
+          const rid = currentTrack.requester?.id;
+          if (rid) client.db.musicStats.increment(rid, currentTrack.title || "");
+        } catch (e) {
+          console.error("[Stats]", e);
         }
-
         await handleTrackStart(client, player, currentTrack);
       }
-
-    } catch (error) {
-    }
+    } catch (_) {}
   },
 };
 
 async function handleTrackStart(client, player, track) {
   try {
-    if (!track) {
-      return;
-    }
-
+    if (!track) return;
     player.data?.delete("playerEmptyProcessed");
 
     const oldMessage = player.data?.get("message");
@@ -476,25 +467,19 @@ async function handleTrackStart(client, player, track) {
       try { await oldMessage.delete(); } catch (_) {}
     }
 
-    if (client.voiceHealthMonitor) {
-      client.voiceHealthMonitor.updateActivity(player.guildId);
-    }
+    if (client.voiceHealthMonitor) client.voiceHealthMonitor.updateActivity(player.guildId);
 
     await updateVoiceStatus(client, player, track);
 
     const message = await sendNowPlaying(client, player, track);
-
-    if (!message) {
-      return;
-    }
+    if (!message) return;
 
     player.data?.set("message", message);
-
     setupMessageCollector(client, player, message);
-
-  } catch (error) {
-    console.error('[HandleTrackStart] Error:', error);
+  } catch (err) {
+    console.error("[HandleTrackStart]", err);
   }
 }
-module.exports.updateNowPlayingButtons = updateNowPlayingButtons;
 
+module.exports.updateNowPlayingButtons = updateNowPlayingButtons;
+module.exports.buildNowPlayingContainer = buildNowPlayingContainer;
