@@ -108,6 +108,7 @@ module.exports = {
   },
 
   async slashExecute(interaction, client) {
+    let buttonRow = null;
     const query = interaction.options.getString("song");
 
     await interaction.deferReply();
@@ -376,7 +377,7 @@ module.exports = {
         .setFooter({ text: position > 0 ? `Use the buttons below to manage this track` : `Now playing!` });
       if (cleanThumb) container.setThumbnail(cleanThumb);
 
-      let buttonRow;
+      buttonRow = null;
       if (position > 0) {
         const removeButton = new ButtonBuilder()
           .setCustomId(`remove_${tInfo.identifier}_${position}`)
@@ -541,6 +542,7 @@ module.exports = {
   },
 
   async execute(message, args, client, prefix) {
+    let buttonRow = null;
     let query = args.join(" ").trim();
     query = query.replace(/[<>]/g, '');
 
@@ -899,7 +901,7 @@ console.log(`[Music] Successfully recreated player for guild ${message.guild.id}
           .setFooter({ text: track.position > 0 ? `Use the buttons below to manage this track` : `Now playing!` });
         if (cleanThumbP) container.setThumbnail(cleanThumbP);
 
-        let buttonRow;
+        buttonRow = null;
         if (track.position > 0) {
           const removeButton = new ButtonBuilder()
             .setCustomId(`remove_${pInfo.identifier}_${track.position}`)
