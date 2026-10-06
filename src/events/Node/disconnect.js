@@ -1,13 +1,10 @@
 module.exports = {
   name: "disconnect",
-  run: async (client, name, players, moved) => {
-    if (!Array.isArray(players)) {
-      console.error("Players is not an array.");
-      return;
-    }
-    if (moved) return;
-    players.map((player) => player.connection.disconnect());
-    client.logger.log(`Lavalink ${name}: Disconnected`, "warn");
+  run: async (client, node, reason) => {
+    const nodeName = node?.id || node?.name || "Lavalink Node";
+    client.logger.log(
+      `Lavalink "${nodeName}" disconnected. Code: ${reason?.code || '?'}, Reason: ${reason?.reason || "No reason"}`,
+      "warn"
+    );
   },
 };
-

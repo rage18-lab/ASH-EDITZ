@@ -1,8 +1,9 @@
 
 
 module.exports = {
-  name: "ready",
-  run: async (client, name) => {
+  name: "connect",
+  run: async (client, node) => {
+    const name = node?.id || node?.name || node;
     client.logger.log(`Lavalink "${name}" connected.`, "ready");
     client.logger.log("Auto Reconnect Collecting player 24/7 data", "log");
 
@@ -59,6 +60,7 @@ module.exports = {
           deaf: true,
           volume: 80,
         });
+        await player.connect();
 
         client.logger.log(
           `Auto Reconnect: Successfully reconnected to ${voice.name} in ${voice.guild.name}`,
