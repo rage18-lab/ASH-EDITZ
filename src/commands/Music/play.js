@@ -328,77 +328,76 @@ module.exports = {
 
       const { convertTime } = require("../../utils/convert.js");
 
-      const cleanAuthorName = (author, maxLength = 25) => {
+      const cleanAuthorName = (author, maxLength = 30) => {
         if (!author) return 'Unknown Artist';
         const cleaned = author.replace(/\s*-\s*Topic\s*$/i, '').trim();
-        return cleaned.length > maxLength ? cleaned.substring(0, maxLength) + '...' : cleaned;
+        return cleaned.length > maxLength ? cleaned.substring(0, maxLength) + '…' : cleaned;
       };
 
-      const truncateTitle = (title, maxLength = 20) => {
+      const truncateTitle = (title, maxLength = 40) => {
         if (!title) return 'Unknown Title';
         if (title.length <= maxLength) return title;
-        return title.substring(0, maxLength) + '...';
+        return title.substring(0, maxLength) + '…';
       };
 
       const getCleanThumbnail = (thumbnailUrl) => {
         if (!thumbnailUrl) return null;
-
         if (thumbnailUrl.includes('i.ytimg.com') || thumbnailUrl.includes('img.youtube.com')) {
           const videoIdMatch = thumbnailUrl.match(/vi\/([^\/]+)\//);
           if (videoIdMatch && videoIdMatch[1]) {
             return `https://i.ytimg.com/vi/${videoIdMatch[1]}/maxresdefault.jpg`;
           }
         }
-
         return thumbnailUrl;
       };
 
-      const getSourceEmoji = (source) => {
-        const s = source?.toLowerCase() || '';
-        if (s.includes('spotify')) return client.emoji.spotify;
-        if (s.includes('youtube') && !s.includes('music')) return client.emoji.youtube;
-        if (s.includes('ytmusic') || s.includes('youtube music')) return client.emoji.ytmusic;
-        if (s.includes('apple')) return client.emoji.applemusic;
-        if (s.includes('deezer')) return client.emoji.deezer;
-        if (s.includes('jio')) return client.emoji.jiosaavn;
-        return client.emoji.dot;
+      const getPlatformEmoji = (uri = '') => {
+        if (uri.includes('spotify.com'))    return '🟢';
+        if (uri.includes('soundcloud.com')) return '🟠';
+        if (uri.includes('deezer.com'))     return '💜';
+        if (uri.includes('apple'))          return '🍎';
+        return '🎵';
       };
-
-      
 
       const tInfo = track.info || track;
       const cleanThumb = getCleanThumbnail(tInfo.artworkUrl || tInfo.thumbnail);
+      const platEmoji  = getPlatformEmoji(tInfo.uri || '');
+      const duration   = convertTime(tInfo.duration || tInfo.length);
+
       const container = new EmbedBuilder()
         .setColor(client.config.color || "#00D4FF")
-        .setTitle(`${client.emoji.check} Track Added`)
+        .setAuthor({ name: `${interaction.user.username} added a track`, iconURL: interaction.user.displayAvatarURL({ dynamic: true }) })
+        .setTitle(`${platEmoji} ${truncateTitle(tInfo.title, 40)}`)
+        .setURL(tInfo.uri || null)
         .setDescription(
-          `[**${truncateTitle(tInfo.title, 25)}**](${tInfo.uri || '#'}) by \` ${cleanAuthorName(tInfo.author)} \`\n` +
-          `-# Position \` #${position} \` • Duration \` ${convertTime(tInfo.duration || tInfo.length)} \` • By \` ${interaction.user.username} \``
-        );
+          `> 🎤 **${cleanAuthorName(tInfo.author)}**\n` +
+          `-# ⏱ \`${duration}\`  ·  📌 Position \`#${position > 0 ? position : 'Now'}\`  ·  ${client.emoji.check} Queued`
+        )
+        .setFooter({ text: position > 0 ? `Use the buttons below to manage this track` : `Now playing!` });
       if (cleanThumb) container.setThumbnail(cleanThumb);
 
+      let buttonRow;
       if (position > 0) {
         const removeButton = new ButtonBuilder()
           .setCustomId(`remove_${tInfo.identifier}_${position}`)
+          .setEmoji('🗑️')
           .setLabel('Remove')
           .setStyle(ButtonStyle.Danger);
 
         const playNextButton = new ButtonBuilder()
           .setCustomId(`playnext_${track.identifier}_${position}`)
+          .setEmoji('⏭️')
           .setLabel('Play Next')
           .setStyle(ButtonStyle.Success)
           .setDisabled(position === 1);
 
-        const buttonRow = new ActionRowBuilder()
-          .addComponents(removeButton, playNextButton);
-
-        /* No separator needed */
+        buttonRow = new ActionRowBuilder().addComponents(removeButton, playNextButton);
       }
 
       let replyMsg;
       try {
         replyMsg = await interaction.editReply({
-          embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+          embeds: [container], components: buttonRow ? [buttonRow] : []
         });
       } catch (editError) {
         if (editError.code === 50027 || editError.code === 10008 || editError.message?.includes('Invalid Webhook Token')) {
@@ -406,7 +405,7 @@ module.exports = {
             const channel = client.channels.cache.get(interaction.channel.id);
             if (channel) {
               replyMsg = await channel.send({
-                embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+                embeds: [container], components: buttonRow ? [buttonRow] : []
               });
             }
           } catch (sendError) {
@@ -445,16 +444,12 @@ module.exports = {
                 const removedTrack = player.queue[trackIndex];
                 player.queue.splice(trackIndex, 1);
 
-                const updatedDisplay = new EmbedBuilder().setDescription(`**${client.emoji.check} Removed [${truncateTitle(removedTrack.title, 25)}](${removedTrack.uri}) from queue.**`).setColor(client.config.color || "#00D4FF");
-
-                const updatedContainer = [updatedDisplay];
+                const updatedDisplay = new EmbedBuilder()
+                  .setColor('#FF4444')
+                  .setDescription(`**${client.emoji.check} Removed [${truncateTitle(removedTrack.title, 35)}](${removedTrack.uri}) from the queue.**`);
 
                 await buttonInteraction.deferUpdate().catch(() => { });
-
-                await buttonInteraction.message.edit({
-                  embeds: updatedContainer
-                }).catch(() => { });
-
+                await buttonInteraction.message.edit({ embeds: [updatedDisplay], components: [] }).catch(() => { });
                 buttonInteraction.message.actionTaken = true;
               } else {
                 await buttonInteraction.reply({ content: `**${client.emoji.cross} This track is no longer in the queue.**`, ephemeral: true });
@@ -474,16 +469,12 @@ module.exports = {
                 player.queue.splice(trackIndex, 1);
                 player.queue.unshift(trackToMove);
 
-                const updatedDisplay = new EmbedBuilder().setDescription(`**${client.emoji.check} Moved [${truncateTitle(trackToMove.title, 25)}](${trackToMove.uri}) to next in queue.**`).setColor(client.config.color || "#00D4FF");
-
-                const updatedContainer = [updatedDisplay];
+                const updatedDisplay = new EmbedBuilder()
+                  .setColor('#00D4FF')
+                  .setDescription(`**${client.emoji.check} [${truncateTitle(trackToMove.title, 35)}](${trackToMove.uri}) will play next!**`);
 
                 await buttonInteraction.deferUpdate().catch(() => { });
-
-                await buttonInteraction.message.edit({
-                  embeds: updatedContainer
-                }).catch(() => { });
-
+                await buttonInteraction.message.edit({ embeds: [updatedDisplay], components: [] }).catch(() => { });
                 buttonInteraction.message.actionTaken = true;
               } else {
                 await buttonInteraction.reply({ content: `**${client.emoji.cross} This track is no longer in the queue.**`, ephemeral: true });
@@ -496,17 +487,7 @@ module.exports = {
 
         collector.on('end', () => {
           if (replyMsg && !replyMsg.deleted && !replyMsg.actionTaken) {
-            const ftInfo = track.info || track;
-            const finalCleanThumb = getCleanThumbnail(ftInfo.artworkUrl || ftInfo.thumbnail);
-            const finalContainer = new EmbedBuilder()
-              .setColor(client.config.color || "#00D4FF")
-              .setTitle(`${client.emoji.check} Track Added`)
-              .setDescription(
-                `[**${truncateTitle(ftInfo.title, 25)}**](${ftInfo.uri || '#'}) by \` ${cleanAuthorName(ftInfo.author)} \`\n` +
-                `-# Position \` #${position} \` • Duration \` ${convertTime(ftInfo.duration || ftInfo.length)} \` • By \` ${interaction.user.username} \``
-              );
-            if (finalCleanThumb) finalContainer.setThumbnail(finalCleanThumb);
-            replyMsg.edit({ embeds: [finalContainer], components: [] }).catch(() => { });
+            replyMsg.edit({ components: [] }).catch(() => { });
           }
         });
       }
@@ -870,81 +851,80 @@ console.log(`[Music] Successfully recreated player for guild ${message.guild.id}
         const track = addedTracks[0];
         const { convertTime } = require("../../utils/convert.js");
 
-        const cleanAuthorName = (author, maxLength = 25) => {
+        const cleanAuthorName = (author, maxLength = 30) => {
           if (!author) return 'Unknown Artist';
           const cleaned = author.replace(/\s*-\s*Topic\s*$/i, '').trim();
-          return cleaned.length > maxLength ? cleaned.substring(0, maxLength) + '...' : cleaned;
+          return cleaned.length > maxLength ? cleaned.substring(0, maxLength) + '…' : cleaned;
         };
 
-        const truncateTitle = (title, maxLength = 20) => {
+        const truncateTitle = (title, maxLength = 40) => {
           if (!title) return 'Unknown Title';
           if (title.length <= maxLength) return title;
-          return title.substring(0, maxLength) + '...';
+          return title.substring(0, maxLength) + '…';
         };
 
         const getCleanThumbnail = (thumbnailUrl) => {
           if (!thumbnailUrl) return null;
-
           if (thumbnailUrl.includes('i.ytimg.com') || thumbnailUrl.includes('img.youtube.com')) {
             const videoIdMatch = thumbnailUrl.match(/vi\/([^\/]+)\//);
             if (videoIdMatch && videoIdMatch[1]) {
               return `https://i.ytimg.com/vi/${videoIdMatch[1]}/maxresdefault.jpg`;
             }
           }
-
           return thumbnailUrl;
         };
 
-        const getSourceEmoji = (source) => {
-          const s = source?.toLowerCase() || '';
-          if (s.includes('spotify')) return client.emoji.spotify;
-          if (s.includes('youtube') && !s.includes('music')) return client.emoji.youtube;
-          if (s.includes('ytmusic') || s.includes('youtube music')) return client.emoji.ytmusic;
-          if (s.includes('apple')) return client.emoji.applemusic;
-          if (s.includes('deezer')) return client.emoji.deezer;
-          if (s.includes('jio')) return client.emoji.jiosaavn;
-          return client.emoji.dot;
+        const getPlatformEmoji = (uri = '') => {
+          if (uri.includes('spotify.com'))    return '🟢';
+          if (uri.includes('soundcloud.com')) return '🟠';
+          if (uri.includes('deezer.com'))     return '💜';
+          if (uri.includes('apple'))          return '🍎';
+          return '🎵';
         };
 
-        
-
-        const pInfo = (track.track?.info) || track.track || track;
+        const pInfo      = (track.track?.info) || track.track || track;
         const cleanThumbP = getCleanThumbnail(pInfo.artworkUrl || pInfo.thumbnail);
+        const platEmojiP  = getPlatformEmoji(pInfo.uri || '');
+        const durationP   = convertTime(pInfo.duration || pInfo.length);
+
         const container = new EmbedBuilder()
           .setColor(client.config.color || "#00D4FF")
-          .setTitle(`${client.emoji.check} Track Added`)
+          .setAuthor({ name: `${message.author.username} added a track`, iconURL: message.author.displayAvatarURL({ dynamic: true }) })
+          .setTitle(`${platEmojiP} ${truncateTitle(pInfo.title, 40)}`)
+          .setURL(pInfo.uri || null)
           .setDescription(
-            `[**${truncateTitle(pInfo.title, 25)}**](${pInfo.uri || '#'}) by \` ${cleanAuthorName(pInfo.author)} \`\n` +
-            `Position \` #${track.position} \` • Duration \` ${convertTime(pInfo.duration || pInfo.length)} \` • By \` ${message.author.username} \``
-          );
+            `> 🎤 **${cleanAuthorName(pInfo.author)}**\n` +
+            `-# ⏱ \`${durationP}\`  ·  📌 Position \`#${track.position > 0 ? track.position : 'Now'}\`  ·  ${client.emoji.check} Queued`
+          )
+          .setFooter({ text: track.position > 0 ? `Use the buttons below to manage this track` : `Now playing!` });
         if (cleanThumbP) container.setThumbnail(cleanThumbP);
 
+        let buttonRow;
         if (track.position > 0) {
           const removeButton = new ButtonBuilder()
             .setCustomId(`remove_${pInfo.identifier}_${track.position}`)
+            .setEmoji('🗑️')
             .setLabel('Remove')
             .setStyle(ButtonStyle.Danger);
 
           const playNextButton = new ButtonBuilder()
             .setCustomId(`playnext_${pInfo.identifier}_${track.position}`)
+            .setEmoji('⏭️')
             .setLabel('Play Next')
             .setStyle(ButtonStyle.Success)
             .setDisabled(track.position === 1);
 
-          const buttonRow = new ActionRowBuilder()
-            .addComponents(removeButton, playNextButton);
-
-          /* No separator needed */
+          buttonRow = new ActionRowBuilder().addComponents(removeButton, playNextButton);
         }
 
         let replyMsg;
         try {
           replyMsg = await message.reply({
-            embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+            embeds: [container], components: buttonRow ? [buttonRow] : []
           });
         } catch (e) {
           replyMsg = await message.channel.send({
-            embeds: Array.isArray(container) ? container : [container], components: typeof buttonRow !== "undefined" ? [buttonRow] : []
+            embeds: [container], components: buttonRow ? [buttonRow] : []
           });
         }
 
@@ -975,16 +955,12 @@ console.log(`[Music] Successfully recreated player for guild ${message.guild.id}
                   const removedTrack = player.queue[trackIndex];
                   player.queue.splice(trackIndex, 1);
 
-                  const updatedDisplay = new EmbedBuilder().setDescription(`**${client.emoji.check} Removed [${truncateTitle(removedTrack.title, 25)}](${removedTrack.uri}) from queue.**`).setColor(client.config.color || "#00D4FF");
-
-                  const updatedContainer = [updatedDisplay];
+                  const updatedDisplay = new EmbedBuilder()
+                    .setColor('#FF4444')
+                    .setDescription(`**${client.emoji.check} Removed [${truncateTitle(removedTrack.title, 35)}](${removedTrack.uri}) from the queue.**`);
 
                   await interaction.deferUpdate().catch(() => { });
-
-                  await interaction.message.edit({
-                    embeds: updatedContainer
-                  }).catch(() => { });
-
+                  await interaction.message.edit({ embeds: [updatedDisplay], components: [] }).catch(() => { });
                   interaction.message.actionTaken = true;
                 } else {
                   await interaction.reply({ content: `**${client.emoji.cross} This track is no longer in the queue.**`, ephemeral: true });
@@ -1004,16 +980,12 @@ console.log(`[Music] Successfully recreated player for guild ${message.guild.id}
                   player.queue.splice(trackIndex, 1);
                   player.queue.unshift(trackToMove);
 
-                  const updatedDisplay = new EmbedBuilder().setDescription(`**${client.emoji.check} Moved [${truncateTitle(trackToMove.title, 25)}](${trackToMove.uri}) to next in queue.**`).setColor(client.config.color || "#00D4FF");
-
-                  const updatedContainer = [updatedDisplay];
+                  const updatedDisplay = new EmbedBuilder()
+                    .setColor('#00D4FF')
+                    .setDescription(`**${client.emoji.check} [${truncateTitle(trackToMove.title, 35)}](${trackToMove.uri}) will play next!**`);
 
                   await interaction.deferUpdate().catch(() => { });
-
-                  await interaction.message.edit({
-                    embeds: updatedContainer
-                  }).catch(() => { });
-
+                  await interaction.message.edit({ embeds: [updatedDisplay], components: [] }).catch(() => { });
                   interaction.message.actionTaken = true;
                 } else {
                   await interaction.reply({ content: `**${client.emoji.cross} This track is no longer in the queue.**`, ephemeral: true });
@@ -1026,17 +998,7 @@ console.log(`[Music] Successfully recreated player for guild ${message.guild.id}
 
           collector.on('end', () => {
             if (replyMsg && !replyMsg.deleted && !replyMsg.actionTaken) {
-              const fpInfo = (track.track?.info) || track.track || track;
-              const finalCleanThumbP = getCleanThumbnail(fpInfo.artworkUrl || fpInfo.thumbnail);
-              const finalContainer = new EmbedBuilder()
-                .setColor(client.config.color || "#00D4FF")
-                .setTitle(`${client.emoji.check} Track Added`)
-                .setDescription(
-                  `[**${truncateTitle(fpInfo.title, 25)}**](${fpInfo.uri || '#'}) by \` ${cleanAuthorName(fpInfo.author)} \`\n` +
-                  `Position \` #${track.position} \` • Duration \` ${convertTime(fpInfo.duration || fpInfo.length)} \` • By \` ${message.author.username} \``
-                );
-              if (finalCleanThumbP) finalContainer.setThumbnail(finalCleanThumbP);
-              replyMsg.edit({ embeds: [finalContainer], components: [] }).catch(() => { });
+              replyMsg.edit({ components: [] }).catch(() => { });
             }
           });
         }

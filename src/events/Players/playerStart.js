@@ -10,7 +10,6 @@ const {
   TextDisplayBuilder,
   SeparatorBuilder,
   SectionBuilder,
-  ThumbnailBuilder
 } = require("discord.js");
 const { player_create } = require("../../config").Webhooks;
 
@@ -44,27 +43,33 @@ function getHQThumbnail(url) {
   return url;
 }
 
-function buildProgressBar(position, duration, barLen = 20) {
-  if (!duration || duration === 0) return { bar: "─".repeat(barLen), pos: "Live", total: "∞" };
+function buildProgressBar(position, duration, barLen = 18) {
+  if (!duration || duration === 0) return { bar: "▬".repeat(barLen), pos: "Live", total: "∞" };
   const pct = Math.min(position / duration, 1);
   const filled = Math.round(barLen * pct);
-  const bar = "━".repeat(filled) + "🔵" + "─".repeat(Math.max(0, barLen - filled));
+  const empty  = Math.max(0, barLen - filled);
+  const bar    = "▰".repeat(filled) + "🔘" + "▱".repeat(empty);
   return { bar, pos: formatDuration(position), total: formatDuration(duration) };
 }
 
-function getPlatformEmoji(uri = "") {
-  if (uri.includes("spotify.com")) return "🟢";
-  if (uri.includes("soundcloud.com")) return "🟠";
-  if (uri.includes("deezer.com")) return "💜";
-  if (uri.includes("apple")) return "🍎";
-  return "🎵"; // YouTube / default
+function getPlatformInfo(uri = "") {
+  if (uri.includes("spotify.com"))    return { emoji: "🟢", name: "Spotify",    color: 0x1DB954 };
+  if (uri.includes("soundcloud.com")) return { emoji: "🟠", name: "SoundCloud", color: 0xFF5500 };
+  if (uri.includes("deezer.com"))     return { emoji: "💜", name: "Deezer",     color: 0xA238FF };
+  if (uri.includes("apple"))          return { emoji: "🍎", name: "Apple Music",color: 0xFC3C44 };
+  return                               { emoji: "🎵", name: "YouTube",          color: 0x00D4FF };
 }
 
 function getLoopLabel(loopMode) {
   if (!loopMode || loopMode === "none") return null;
-  if (loopMode === "track") return "🔂 Track Loop";
-  if (loopMode === "queue") return "🔁 Queue Loop";
+  if (loopMode === "track") return "🔂 Track";
+  if (loopMode === "queue") return "🔁 Queue";
   return `🔁 ${loopMode}`;
+}
+
+function getVolumeBar(vol) {
+  const blocks = Math.round((vol / 150) * 8);
+  return "█".repeat(blocks) + "░".repeat(8 - blocks);
 }
 
 // ─── Button Rows ─────────────────────────────────────────────────────────────
@@ -95,19 +100,19 @@ function buildControlRow(client, paused) {
 }
 
 function buildSecondaryRow(client, player) {
-  const loopMode = player.repeatMode || player.loop || "none";
+  const loopMode  = player.repeatMode || player.loop || "none";
   const isLooping = loopMode !== "none";
   const isShuffled = player.queue?.shuffled || false;
 
   return new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId("np_loop")
-      .setLabel(loopMode === "track" ? "Loop: Track" : loopMode === "queue" ? "Loop: Queue" : "Loop: Off")
+      .setLabel(loopMode === "track" ? "Loop: Track" : loopMode === "queue" ? "Loop: Queue" : "Loop")
       .setEmoji("🔁")
       .setStyle(isLooping ? ButtonStyle.Success : ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId("np_shuffle")
-      .setLabel(isShuffled ? "Shuffle: On" : "Shuffle: Off")
+      .setLabel(isShuffled ? "Shuffle: On" : "Shuffle")
       .setEmoji("🔀")
       .setStyle(isShuffled ? ButtonStyle.Success : ButtonStyle.Secondary),
     new ButtonBuilder()
@@ -126,46 +131,50 @@ function buildSecondaryRow(client, player) {
   );
 }
 
-// ─── Container Builder ───────────────────────────────────────────────────────
+// ─── Now Playing Container ───────────────────────────────────────────────────
 
 function buildNowPlayingContainer(client, track, player) {
-  const info    = track.info || track;
-  const title   = info.title   || "Unknown Title";
-  const uri     = info.uri     || info.url || "#";
-  const author  = info.author  || "Unknown Artist";
-  const dur     = info.duration || info.length || 0;
-  const artwork = info.artworkUrl || info.thumbnail || info.image;
-  const requester = track.requester;
-  const paused  = player?.paused || false;
+  const info       = track.info || track;
+  const title      = info.title   || "Unknown Title";
+  const uri        = info.uri     || info.url || "#";
+  const author     = info.author  || "Unknown Artist";
+  const dur        = info.duration || info.length || 0;
+  const artwork    = info.artworkUrl || info.thumbnail || info.image;
+  const requester  = track.requester;
+  const paused     = player?.paused || false;
+  const position   = player?.position || 0;
+  const volume     = player?.volume ?? 100;
+  const queueCount = player?.queue?.length ?? 0;
+  const loopMode   = player?.repeatMode || player?.loop || "none";
+  const loopLabel  = getLoopLabel(loopMode);
 
-  const position    = player?.position || 0;
   const { bar, pos, total } = buildProgressBar(position, dur);
-  const platform    = getPlatformEmoji(uri);
-  const loopLabel   = getLoopLabel(player?.repeatMode || player?.loop);
-  const queueCount  = player?.queue?.length ?? 0;
-  const volume      = player?.volume ?? 100;
+  const platform            = getPlatformInfo(uri);
+  const cleanThumb          = getHQThumbnail(artwork);
+  const volBar              = getVolumeBar(volume);
 
-  // Build status badges
-  const badges = [];
-  if (paused)    badges.push("⏸ Paused");
-  if (loopLabel) badges.push(loopLabel);
-  if (queueCount > 0) badges.push(`📋 ${queueCount} in queue`);
-  const badgeLine = badges.length ? `\n${badges.join("  •  ")}` : "";
+  // Status line badges
+  const statusParts = [];
+  if (paused)    statusParts.push("⏸ **Paused**");
+  if (loopLabel) statusParts.push(loopLabel);
+  if (queueCount > 0) statusParts.push(`📋 ${queueCount} up next`);
+  const statusLine = statusParts.length ? `\n-# ${statusParts.join("  ·  ")}` : "";
 
-  const titleDisplay = new TextDisplayBuilder()
-    .setContent(`### ${platform} [${truncate(title, 45)}](${uri})${badgeLine}`);
+  // Title block
+  const titleDisplay = new TextDisplayBuilder().setContent(
+    `### ${platform.emoji} [${truncate(title, 48)}](${uri})` +
+    `\n> 🎤 **${cleanAuthor(author)}**  ·  🏷️ *${platform.name}*` +
+    statusLine
+  );
 
-  const infoDisplay = new TextDisplayBuilder()
-    .setContent(
-      `> 🎤 **Artist:** ${cleanAuthor(author)}\n` +
-      `> 👤 **Requested by:** [${requester?.username || "Unknown"}](https://discord.com/users/${requester?.id || "0"})\n` +
-      `> 🔊 **Volume:** ${volume}%  •  ⏱ **Duration:** \`${total}\`\n` +
-      `> \`${pos}\` ${bar} \`${total}\``
-    );
+  // Progress + meta block
+  const infoDisplay = new TextDisplayBuilder().setContent(
+    `\`${pos}\` ${bar} \`${total}\`\n` +
+    `> 🔊 \`${volBar}\` **${volume}%**  ·  👤 [${requester?.username || "Unknown"}](https://discord.com/users/${requester?.id || "0"})`
+  );
 
   const container = new ContainerBuilder();
 
-  const cleanThumb = getHQThumbnail(artwork);
   if (cleanThumb) {
     const section = new SectionBuilder()
       .addTextDisplayComponents(titleDisplay, infoDisplay)
@@ -198,6 +207,7 @@ async function sendNowPlaying(client, player, track) {
       player.data?.set("currentTrack", track);
       return message;
     } catch (e) {
+      console.error("[NowPlaying] send error:", e.message);
       return null;
     }
   } catch (e) {
@@ -212,7 +222,6 @@ async function updateNowPlayingButtons(client, player, paused) {
     const track = player.data?.get("currentTrack") || player.queue?.current;
     if (!track) return;
 
-    // Sync paused state onto player obj for container builder
     const fakePl = Object.assign(Object.create(Object.getPrototypeOf(player)), player, { paused });
     const container = buildNowPlayingContainer(client, track, fakePl);
     await msg.edit({ components: [container], flags: MessageFlags.IsComponentsV2 }).catch(() => {});
@@ -285,7 +294,7 @@ async function handleButtonInteraction(interaction, player, client) {
             author: cur.author, addedAt: new Date().toISOString()
           });
           client.db.liked.set(interaction.user.id, songs);
-          return _ephemeralMsg(interaction, client, `${client.emoji.check} Added **${cur.title}** to favourites!`);
+          return _ephemeralMsg(interaction, client, `${client.emoji.check} Added **${cur.title}** to your favourites!`);
         } catch (_) {
           return _ephemeralMsg(interaction, client, `${client.emoji.cross} Failed to save. Try again.`);
         }
@@ -297,9 +306,8 @@ async function handleButtonInteraction(interaction, player, client) {
         const cur   = player.repeatMode || player.loop || "none";
         const next  = modes[(modes.indexOf(cur) + 1) % modes.length];
         try { player.setRepeatMode?.(next) || (player.repeatMode = next); } catch (_) { player.loop = next; }
-        const label = next === "none" ? "Loop disabled" : next === "track" ? "🔂 Looping this track" : "🔁 Looping whole queue";
+        const label = next === "none" ? "Loop disabled" : next === "track" ? "🔂 Looping this track" : "🔁 Looping the queue";
         await _ephemeralMsg(interaction, client, `${client.emoji.check} ${label}`);
-        // Refresh panel
         const track = player.data?.get("currentTrack") || player.queue?.current;
         if (track) {
           const msg = player.data?.get("message");
@@ -326,13 +334,29 @@ async function handleButtonInteraction(interaction, player, client) {
       case "np_voldown": {
         const newVol = Math.max(0, (player.volume || 100) - 10);
         await player.setVolume(newVol);
-        await _ephemeralMsg(interaction, client, `${client.emoji.voldown} Volume: **${newVol}%**`);
+        await _ephemeralMsg(interaction, client, `${client.emoji.voldown} Volume set to **${newVol}%**`);
+        const track = player.data?.get("currentTrack") || player.queue?.current;
+        if (track) {
+          const msg = player.data?.get("message");
+          if (msg) {
+            const c = buildNowPlayingContainer(client, track, player);
+            await msg.edit({ components: [c], flags: MessageFlags.IsComponentsV2 }).catch(() => {});
+          }
+        }
         return;
       }
       case "np_volup": {
         const newVol = Math.min(150, (player.volume || 100) + 10);
         await player.setVolume(newVol);
-        await _ephemeralMsg(interaction, client, `${client.emoji.volup} Volume: **${newVol}%**`);
+        await _ephemeralMsg(interaction, client, `${client.emoji.volup} Volume set to **${newVol}%**`);
+        const track = player.data?.get("currentTrack") || player.queue?.current;
+        if (track) {
+          const msg = player.data?.get("message");
+          if (msg) {
+            const c = buildNowPlayingContainer(client, track, player);
+            await msg.edit({ components: [c], flags: MessageFlags.IsComponentsV2 }).catch(() => {});
+          }
+        }
         return;
       }
 
@@ -340,13 +364,15 @@ async function handleButtonInteraction(interaction, player, client) {
       case "np_queue": {
         const q = player.queue;
         if (!q?.length) {
-          return _ephemeralMsg(interaction, client, `${client.emoji.info} Queue is empty.`);
+          return _ephemeralMsg(interaction, client, `${client.emoji.info} The queue is empty — add more songs!`);
         }
-        const list = [...q].slice(0, 8).map((t, i) =>
-          `\`${i + 1}.\` [${(t.title || "Unknown").slice(0, 35)}](${t.uri}) — \`${formatDuration(t.length)}\``
-        ).join("\n");
+        const list = [...q].slice(0, 8).map((t, i) => {
+          const plat = getPlatformInfo(t.uri || "");
+          return `\`${String(i + 1).padStart(2, " ")}.\` ${plat.emoji} [${(t.title || "Unknown").slice(0, 38)}](${t.uri}) — \`${formatDuration(t.length)}\``;
+        }).join("\n");
         const display = new TextDisplayBuilder().setContent(
-          `### 📋 Up Next (${q.length} tracks)\n${list}${q.length > 8 ? `\n*…and ${q.length - 8} more*` : ""}`
+          `### 📋 Up Next (${q.length} track${q.length !== 1 ? "s" : ""})\n${list}` +
+          (q.length > 8 ? `\n-# … and ${q.length - 8} more` : "")
         );
         const c = new ContainerBuilder().addTextDisplayComponents(display);
         return interaction.reply({ components: [c], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
@@ -391,7 +417,7 @@ function setupMessageCollector(client, player, message) {
     collector.on("collect", async (interaction) => {
       try {
         if (!interaction.member?.voice?.channelId || interaction.member.voice.channelId !== player.voiceChannelId) {
-          return _ephemeralMsg(interaction, client, `${client.emoji.warn} You must be in the same voice channel as the bot.`);
+          return _ephemeralMsg(interaction, client, `${client.emoji.warn} You must be in my voice channel to use these controls.`);
         }
         await handleButtonInteraction(interaction, player, client);
       } catch (e) {
@@ -413,7 +439,7 @@ async function updateVoiceStatus(client, player, track) {
     if (player.state === "DESTROYED" || player.state === "DISCONNECTED") return;
     await client.rest
       .put(`/channels/${player.voiceChannelId}/voice-status`, {
-        body: { status: `${client.emoji.dance} Playing **${track.title}**` },
+        body: { status: `${client.emoji.dance} Playing ${track.title}` },
       })
       .catch((err) => console.error("[VoiceStatus]", err.message));
   } catch (err) {
@@ -444,7 +470,6 @@ module.exports = {
 
       const currentTrack = track || player.queue?.current;
       if (currentTrack) {
-        // Track leaderboard stats
         try {
           const rid = currentTrack.requester?.id;
           if (rid) client.db.musicStats.increment(rid, currentTrack.title || "");
