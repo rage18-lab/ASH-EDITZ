@@ -152,25 +152,25 @@ module.exports = function loadPlayerManager(client) {
     return { loadType: "empty", tracks: [] };
   };
 
-  // Node-level events
-  manager.nodeManager.on("connect", (node) =>
-    console.log(`[Lavalink] Node "${node.id}" connected.`)
-  );
-  manager.nodeManager.on("error", (node, error) =>
-    console.log(`[Lavalink] Node "${node.id}" error: ${error?.message || error}`)
-  );
-  manager.nodeManager.on("disconnect", (node, reason) =>
-    console.log(`[Lavalink] Node "${node.id}" disconnected. Code: ${reason?.code || "?"}`)
-  );
-  manager.nodeManager.on("reconnecting", (node) =>
-    console.log(`[Lavalink] Node "${node.id}" reconnecting...`)
-  );
-  manager.nodeManager.on("reconnect", (node) =>
-    console.log(`[Lavalink] Node "${node.id}" reconnected.`)
-  );
-
+  // NOTE: Node-level events (connect/disconnect/error/reconnecting/reconnect) are
+  // registered by loadNodes.js from events/Node/. We only register the manager-level
+  // error here to avoid double-firing.
   manager.on("error", (player, error) => {
     console.error(`[LavalinkManager] Error:`, error);
+  });
+
+  // Guard: if a node is rate-limited (code 4000), disable auto-retry to
+  // stop the reconnect storm that public nodes impose on free bots.
+  manager.nodeManager.on("disconnect", (node, reason) => {
+    if (reason?.code === 4000) {
+      console.warn(`[Lavalink] Node "${node.id}" rate-limited (4000). Suppressing auto-reconnect for 2 minutes.`);
+      node.options.retryAmount = 0; // stop lavalink-client from retrying immediately
+      setTimeout(() => {
+        node.options.retryAmount = client.config.node_options?.retryAmount ?? 5;
+        console.log(`[Lavalink] Node "${node.id}" reconnect allowed again. Attempting...`);
+        node.connect().catch(() => {});
+      }, 2 * 60 * 1000); // wait 2 minutes before retrying
+    }
   });
 
   // Bridge lavalink-client v2 events to legacy bot player events

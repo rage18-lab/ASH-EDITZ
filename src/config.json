@@ -34,8 +34,8 @@
     }
   ],
   "node_options": {
-    "retryAmount": 15,
-    "retryDelay": 10000,
+    "retryAmount": 3,
+    "retryDelay": 30000,
     "requestTimeout": 60000
   }
 }
