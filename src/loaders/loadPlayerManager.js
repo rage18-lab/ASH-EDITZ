@@ -1,4 +1,52 @@
-const { LavalinkManager, ManagerUtils } = require("lavalink-client");
+const { LavalinkManager, ManagerUtils, LavalinkNode } = require("lavalink-client");
+
+// ── Proxy-error bypass ────────────────────────────────────────────────────────
+// Some hosting providers (e.g. Bot-Hosting.net) route outbound HTTP through a
+// proxy that returns "Proxy error..." text instead of JSON for certain hosts.
+// lavalink-client calls GET /v4/info before declaring the node connected, and
+// throws if it doesn't receive valid JSON. We patch open() to catch that specific
+// failure and inject a minimal stub so the WebSocket session can continue.
+if (LavalinkNode?.prototype?.open) {
+  const _origOpen = LavalinkNode.prototype.open;
+  LavalinkNode.prototype.open = async function () {
+    // Patch fetchInfo to silently swallow proxy/JSON errors
+    const _origFetchInfo = this.fetchInfo?.bind(this);
+    if (_origFetchInfo) {
+      this.fetchInfo = async (...args) => {
+        try {
+          return await _origFetchInfo(...args);
+        } catch (err) {
+          const msg = String(err?.message || err);
+          if (
+            msg.includes("Proxy erro") ||
+            msg.includes("not valid JSON") ||
+            msg.includes("SyntaxError") ||
+            msg.includes("fetch failed") ||
+            msg.includes("ECONNREFUSED") ||
+            msg.includes("ETIMEDOUT")
+          ) {
+            console.warn(`[Lavalink] /info fetch blocked by proxy for node "${this.id}" — using stub. Node will still connect via WebSocket.`);
+            return {
+              version: { semver: "4.0.0", major: 4, minor: 0, patch: 0, preRelease: null },
+              buildTime: Date.now(),
+              git: { branch: "main", commit: "unknown", commitTime: Date.now() },
+              jvm: "unknown",
+              lavaplayer: "unknown",
+              sourceManagers: [],
+              filters: [],
+              plugins: [],
+              isNodelink: false,
+            };
+          }
+          throw err;
+        }
+      };
+    }
+    return _origOpen.call(this);
+  };
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 
 // Patch ManagerUtils to provide direct property access on built tracks for legacy compatibility
 const origBuildTrack = ManagerUtils.prototype.buildTrack;
