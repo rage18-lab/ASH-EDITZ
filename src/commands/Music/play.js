@@ -335,7 +335,7 @@ module.exports = {
         return cleaned.length > maxLength ? cleaned.substring(0, maxLength) + '…' : cleaned;
       };
 
-      const truncateTitle = (title, maxLength = 40) => {
+      const truncateTitle = (title, maxLength = 45) => {
         if (!title) return 'Unknown Title';
         if (title.length <= maxLength) return title;
         return title.substring(0, maxLength) + '…';
@@ -352,29 +352,43 @@ module.exports = {
         return thumbnailUrl;
       };
 
-      const getPlatformEmoji = (uri = '') => {
-        if (uri.includes('spotify.com'))    return '🟢';
-        if (uri.includes('soundcloud.com')) return '🟠';
-        if (uri.includes('deezer.com'))     return '💜';
-        if (uri.includes('apple'))          return '🍎';
-        return '🎵';
+      const getPlatformInfo = (uri = '') => {
+        if (uri.includes('spotify.com'))    return { emoji: '🟢', color: '#1DB954', name: 'Spotify' };
+        if (uri.includes('soundcloud.com')) return { emoji: '🟠', color: '#FF5500', name: 'SoundCloud' };
+        if (uri.includes('deezer.com'))     return { emoji: '💜', color: '#A238CA', name: 'Deezer' };
+        if (uri.includes('apple'))          return { emoji: '🍎', color: '#FC3C44', name: 'Apple Music' };
+        return { emoji: '🎵', color: client.config.color || '#00D4FF', name: 'YouTube' };
       };
 
-      const tInfo = track.info || track;
+      const tInfo      = track.info || track;
       const cleanThumb = getCleanThumbnail(tInfo.artworkUrl || tInfo.thumbnail);
-      const platEmoji  = getPlatformEmoji(tInfo.uri || '');
+      const platform   = getPlatformInfo(tInfo.uri || '');
       const duration   = convertTime(tInfo.duration || tInfo.length);
+      const queueLen   = player.queue?.size ?? player.queue?.length ?? 0;
+
+      const statusLine = position > 0
+        ? `📌 **Position** \`#${position}\`  •  📋 **${queueLen} in queue**`
+        : `▶️ **Now Playing**  •  📋 **${queueLen} in queue**`;
 
       const container = new EmbedBuilder()
-        .setColor(client.config.color || "#00D4FF")
-        .setAuthor({ name: `${interaction.user.username} added a track`, iconURL: interaction.user.displayAvatarURL({ dynamic: true }) })
-        .setTitle(`${platEmoji} ${truncateTitle(tInfo.title, 40)}`)
+        .setColor(platform.color)
+        .setAuthor({
+          name: `${interaction.user.displayName || interaction.user.username} • Added to Queue`,
+          iconURL: interaction.user.displayAvatarURL({ dynamic: true })
+        })
+        .setTitle(`${platform.emoji}  ${truncateTitle(tInfo.title, 45)}`)
         .setURL(tInfo.uri || null)
         .setDescription(
-          `> 🎤 **${cleanAuthorName(tInfo.author)}**\n` +
-          `-# ⏱ \`${duration}\`  ·  📌 Position \`#${position > 0 ? position : 'Now'}\`  ·  ${client.emoji.check} Queued`
+          `> 🎤 **${cleanAuthorName(tInfo.author)}**\n\n` +
+          `⏱️ \`${duration}\`  •  ${statusLine}`
         )
-        .setFooter({ text: position > 0 ? `Use the buttons below to manage this track` : `Now playing!` });
+        .setFooter({
+          text: position > 0
+            ? `via ${platform.name}  •  Use buttons to manage`
+            : `via ${platform.name}  •  Enjoy the music!`,
+          iconURL: interaction.guild.iconURL({ dynamic: true }) || undefined
+        })
+        .setTimestamp();
       if (cleanThumb) container.setThumbnail(cleanThumb);
 
       buttonRow = null;
@@ -859,7 +873,7 @@ console.log(`[Music] Successfully recreated player for guild ${message.guild.id}
           return cleaned.length > maxLength ? cleaned.substring(0, maxLength) + '…' : cleaned;
         };
 
-        const truncateTitle = (title, maxLength = 40) => {
+        const truncateTitle = (title, maxLength = 45) => {
           if (!title) return 'Unknown Title';
           if (title.length <= maxLength) return title;
           return title.substring(0, maxLength) + '…';
@@ -876,29 +890,43 @@ console.log(`[Music] Successfully recreated player for guild ${message.guild.id}
           return thumbnailUrl;
         };
 
-        const getPlatformEmoji = (uri = '') => {
-          if (uri.includes('spotify.com'))    return '🟢';
-          if (uri.includes('soundcloud.com')) return '🟠';
-          if (uri.includes('deezer.com'))     return '💜';
-          if (uri.includes('apple'))          return '🍎';
-          return '🎵';
+        const getPlatformInfo = (uri = '') => {
+          if (uri.includes('spotify.com'))    return { emoji: '🟢', color: '#1DB954', name: 'Spotify' };
+          if (uri.includes('soundcloud.com')) return { emoji: '🟠', color: '#FF5500', name: 'SoundCloud' };
+          if (uri.includes('deezer.com'))     return { emoji: '💜', color: '#A238CA', name: 'Deezer' };
+          if (uri.includes('apple'))          return { emoji: '🍎', color: '#FC3C44', name: 'Apple Music' };
+          return { emoji: '🎵', color: client.config.color || '#00D4FF', name: 'YouTube' };
         };
 
-        const pInfo      = (track.track?.info) || track.track || track;
-        const cleanThumbP = getCleanThumbnail(pInfo.artworkUrl || pInfo.thumbnail);
-        const platEmojiP  = getPlatformEmoji(pInfo.uri || '');
-        const durationP   = convertTime(pInfo.duration || pInfo.length);
+        const pInfo       = (track.track?.info) || track.track || track;
+        const cleanThumbP  = getCleanThumbnail(pInfo.artworkUrl || pInfo.thumbnail);
+        const platformP    = getPlatformInfo(pInfo.uri || '');
+        const durationP    = convertTime(pInfo.duration || pInfo.length);
+        const queueLenP    = player.queue?.size ?? player.queue?.length ?? 0;
+
+        const statusLineP = track.position > 0
+          ? `📌 **Position** \`#${track.position}\`  •  📋 **${queueLenP} in queue**`
+          : `▶️ **Now Playing**  •  📋 **${queueLenP} in queue**`;
 
         const container = new EmbedBuilder()
-          .setColor(client.config.color || "#00D4FF")
-          .setAuthor({ name: `${message.author.username} added a track`, iconURL: message.author.displayAvatarURL({ dynamic: true }) })
-          .setTitle(`${platEmojiP} ${truncateTitle(pInfo.title, 40)}`)
+          .setColor(platformP.color)
+          .setAuthor({
+            name: `${message.author.displayName || message.author.username} • Added to Queue`,
+            iconURL: message.author.displayAvatarURL({ dynamic: true })
+          })
+          .setTitle(`${platformP.emoji}  ${truncateTitle(pInfo.title, 45)}`)
           .setURL(pInfo.uri || null)
           .setDescription(
-            `> 🎤 **${cleanAuthorName(pInfo.author)}**\n` +
-            `-# ⏱ \`${durationP}\`  ·  📌 Position \`#${track.position > 0 ? track.position : 'Now'}\`  ·  ${client.emoji.check} Queued`
+            `> 🎤 **${cleanAuthorName(pInfo.author)}**\n\n` +
+            `⏱️ \`${durationP}\`  •  ${statusLineP}`
           )
-          .setFooter({ text: track.position > 0 ? `Use the buttons below to manage this track` : `Now playing!` });
+          .setFooter({
+            text: track.position > 0
+              ? `via ${platformP.name}  •  Use buttons to manage`
+              : `via ${platformP.name}  •  Enjoy the music!`,
+            iconURL: message.guild.iconURL({ dynamic: true }) || undefined
+          })
+          .setTimestamp();
         if (cleanThumbP) container.setThumbnail(cleanThumbP);
 
         buttonRow = null;
