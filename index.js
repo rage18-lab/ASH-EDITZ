@@ -73,6 +73,8 @@ if (!process.env.CLUSTER_MANAGER_MODE) {
   process.on('unhandledRejection', (reason, p) => {
     if (reason && (
       reason.code === 'UND_ERR_CONNECT_TIMEOUT' ||
+      reason.name === 'TimeoutError' ||
+      reason.name === 'AbortError' ||
       (reason.message && reason.message.includes('fetch failed'))
     )) {
       console.log('[Lavalink Error] Connection timeout or fetch failed. Node might be down.');

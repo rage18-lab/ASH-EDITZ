@@ -146,6 +146,22 @@ module.exports = function loadPlayerManager(client) {
   manager.searchEngines = searchEngines;
 
   // Search function using LavalinkNode.search
+  // Each attempt is guarded by a per-request timeout so a slow node
+  // never hangs the bot indefinitely.
+  const SEARCH_TIMEOUT_MS = 8000;
+
+  function searchWithTimeout(node, params, requester) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new Error("Search timed out"));
+      }, SEARCH_TIMEOUT_MS);
+
+      node.search(params, requester)
+        .then(res => { clearTimeout(timer); resolve(res); })
+        .catch(err => { clearTimeout(timer); reject(err); });
+    });
+  }
+
   manager.search = async function (query, requesterOrOpts, options = {}) {
     if (!this.nodeManager?.nodes) return { loadType: "empty", tracks: [] };
     const node = [...this.nodeManager.nodes.values()].find(n => n.connected) ||
@@ -175,11 +191,16 @@ module.exports = function loadPlayerManager(client) {
 
     if (isUrl) {
       try {
-        const res = await node.search({ query: cleanQuery }, requester);
+        const res = await searchWithTimeout(node, { query: cleanQuery }, requester);
         if (res && res.loadType !== "empty" && res.loadType !== "error" && res.tracks?.length) {
           return res;
         }
-      } catch (_) {}
+      } catch (err) {
+        const msg = String(err?.message || err?.name || err);
+        if (!msg.includes("timed out") && !msg.includes("TimeoutError") && !msg.includes("AbortError")) {
+          console.warn(`[Search] URL search failed: ${msg}`);
+        }
+      }
     } else {
       const defaultEngine = client.config.node_source || "ytmsearch";
       const engineList = source
@@ -189,11 +210,17 @@ module.exports = function loadPlayerManager(client) {
       for (const engine of engineList) {
         if (!engine) continue;
         try {
-          const res = await node.search({ query: cleanQuery, source: engine }, requester);
+          const res = await searchWithTimeout(node, { query: cleanQuery, source: engine }, requester);
           if (res && res.loadType !== "empty" && res.loadType !== "error" && res.tracks?.length) {
             return res;
           }
-        } catch (_) { continue; }
+        } catch (err) {
+          const msg = String(err?.message || err?.name || err);
+          if (!msg.includes("timed out") && !msg.includes("TimeoutError") && !msg.includes("AbortError")) {
+            console.warn(`[Search] Engine "${engine}" failed: ${msg}`);
+          }
+          continue;
+        }
       }
     }
 
