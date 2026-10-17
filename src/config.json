@@ -26,10 +26,10 @@
   },
   "nodes": [
     {
-      "id": "jirayu",
-      "host": "lavalink.jirayu.net",
+      "id": "serenetia",
+      "host": "lavalinkv4.serenetia.com",
       "port": 443,
-      "authorization": "youshallnotpass",
+      "authorization": "https://seretia.link/discord",
       "secure": true
     }
   ],
