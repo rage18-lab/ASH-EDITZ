@@ -81,27 +81,7 @@ module.exports = {
     } else {
       console.log("\n⚠️ WARNING: No slash commands to deploy! client.slashCommands.size = 0\n");
     }
-    // ── Resume active giveaways after restart ──────────────────────────────────
-    try {
-      const giveawayCmd = client.commands.get("giveaway");
-      if (giveawayCmd && client.db.giveaways) {
-        const activeGiveaways = client.db.giveaways.getActive();
-        client.logger.log(`[Giveaway] Resuming ${activeGiveaways.length} active giveaway(s)...`, "ready");
 
-        for (const gw of activeGiveaways) {
-          const remaining = gw.endsAt - Date.now();
-          if (remaining <= 0) {
-            // Already expired — finalize immediately
-            await giveawayCmd._finalizeGiveaway(client, gw.messageId).catch(() => {});
-          } else {
-            // Re-schedule
-            giveawayCmd._scheduleGiveaway(client, gw.messageId, gw.guildId, remaining);
-          }
-        }
-      }
-    } catch (e) {
-      console.error("[Giveaway] Resume error:", e);
-    }
 
   },
 };

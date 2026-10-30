@@ -367,43 +367,6 @@ module.exports = {
         }
       }
 
-      // ── Giveaway entry button ───────────────────────────────────────────────
-      if (interaction.customId.startsWith("gw_enter_")) {
-        const parts     = interaction.customId.split("_");
-        // customId format: gw_enter_<guildId>_<messageId>
-        const messageId = parts[parts.length - 1];
-        const gw        = client.db.giveaways.get(messageId);
-
-        if (!gw || gw.ended) {
-          const c = new ContainerBuilder().addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(`${client.emoji.cross} This giveaway has ended or doesn't exist.`)
-          );
-          return interaction.reply({ components: [c], flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2 }).catch(() => {});
-        }
-
-        const entrants = JSON.parse(gw.entrants || "[]");
-        const userId   = interaction.user.id;
-        const alreadyIn = entrants.includes(userId);
-
-        if (alreadyIn) {
-          // Leave giveaway
-          const newEntrants = entrants.filter(id => id !== userId);
-          client.db.giveaways.update(messageId, { entrants: JSON.stringify(newEntrants) });
-          const c = new ContainerBuilder().addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(`${client.emoji.warn} You have **left** the giveaway for **${gw.prize}**.`)
-          );
-          return interaction.reply({ components: [c], flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2 }).catch(() => {});
-        } else {
-          // Join giveaway
-          entrants.push(userId);
-          client.db.giveaways.update(messageId, { entrants: JSON.stringify(entrants) });
-          const c = new ContainerBuilder().addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(`${client.emoji.check} You have **entered** the giveaway for **${gw.prize}**! Good luck! 🎉`)
-          );
-          return interaction.reply({ components: [c], flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2 }).catch(() => {});
-        }
-      }
-
       const data = client.db.setup.get(interaction.guildId);
       if (
         data &&
