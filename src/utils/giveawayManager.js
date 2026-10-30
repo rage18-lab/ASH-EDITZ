@@ -1,6 +1,20 @@
 const { MessageFlags, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder } = require('discord.js');
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Helper: count how many invite uses a user has in a guild
+// ─────────────────────────────────────────────────────────────────────────────
+async function getUserInviteCount(guild, userId) {
+    try {
+        const invites = await guild.invites.fetch();
+        return invites
+            .filter(inv => inv.inviter?.id === userId)
+            .reduce((sum, inv) => sum + (inv.uses || 0), 0);
+    } catch {
+        return 0;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // End a giveaway: pick winners, edit the message, announce result
 // ─────────────────────────────────────────────────────────────────────────────
 async function endGiveaway(client, giveaway) {
@@ -20,9 +34,64 @@ async function endGiveaway(client, giveaway) {
         if (!message) return;
 
         const winners = [];
+
         if (giveaway.participants.length > 0) {
             const validParticipants = giveaway.participants.filter(id => id !== giveaway.hostId);
             const participantsToUse = validParticipants.length > 0 ? validParticipants : giveaway.participants;
+
+            // ── Invite-winner mode: pick who has the most server invites ────────
+            if (giveaway.inviteWinner) {
+                const inviteCounts = await Promise.all(
+                    participantsToUse.map(async id => ({
+                        id,
+                        count: await getUserInviteCount(guild, id),
+                    }))
+                );
+
+                // Sort descending by invite count
+                inviteCounts.sort((a, b) => b.count - a.count);
+
+                // Announce leaderboard in winner text
+                const leaderboard = inviteCounts
+                    .slice(0, Math.min(5, inviteCounts.length))
+                    .map((p, i) => `**${i + 1}.** <@${p.id}> — \`${p.count}\` invite${p.count !== 1 ? 's' : ''}`)
+                    .join('\n');
+
+                winners.push(...inviteCounts.slice(0, giveaway.winnerCount).map(p => p.id));
+
+                const winnerText = winners.length > 0
+                    ? `${winners.map(w => `<@${w}>`).join(', ')}`
+                    : 'No one qualified.';
+
+                const hostUser = await client.users.fetch(giveaway.hostId).catch(() => null);
+
+                const endHeader = new TextDisplayBuilder().setContent(`### ${client.emoji.gwy} Giveaway Ended — 🏆 Most Invites Won`);
+                const endSep    = new SeparatorBuilder();
+                const endInfo   = new TextDisplayBuilder().setContent(
+                    `${client.emoji.wickarrow} **Prize:** \`${giveaway.prize}\`\n` +
+                    `${client.emoji.wickarrow} **Host:** <@${giveaway.hostId}>\n` +
+                    `${client.emoji.wickarrow} **Participants:** ${giveaway.participants.length}\n` +
+                    `${client.emoji.wickarrow} **Winner${winners.length > 1 ? 's' : ''}:** ${winnerText}\n\n` +
+                    `**Top Inviters:**\n${leaderboard || '*No invite data available.*'}`
+                );
+
+                const container = new ContainerBuilder()
+                    .addTextDisplayComponents(endHeader)
+                    .addSeparatorComponents(endSep)
+                    .addTextDisplayComponents(endInfo);
+
+                await message.edit({ components: [container], embeds: [], flags: MessageFlags.IsComponentsV2, allowedMentions: { parse: [] } });
+                await message.reactions.removeAll().catch(() => null);
+
+                if (winners.length > 0) {
+                    channel.send({ content: `${client.emoji.gwy} Congratulations ${winners.map(w => `<@${w}>`).join(', ')}, You won **\`${giveaway.prize}\`** with the most invites! Hosted by ${hostUser}!` });
+                } else {
+                    channel.send({ content: `The giveaway for **\`${giveaway.prize}\`** has ended, but no one qualified.` });
+                }
+                return;
+            }
+
+            // ── Normal random draw ──────────────────────────────────────────────
             const shuffled = [...participantsToUse].sort(() => 0.5 - Math.random());
             winners.push(...shuffled.slice(0, giveaway.winnerCount));
         }
@@ -31,11 +100,11 @@ async function endGiveaway(client, giveaway) {
             ? `${winners.map(w => `<@${w}>`).join(', ')}`
             : 'No one entered the giveaway.';
 
-        const hostUser        = await client.users.fetch(giveaway.hostId).catch(() => null);
+        const hostUser = await client.users.fetch(giveaway.hostId).catch(() => null);
 
-        const endHeader  = new TextDisplayBuilder().setContent(`### ${client.emoji.gwy} Giveaway Ended`);
-        const endSep     = new SeparatorBuilder();
-        const endInfo    = new TextDisplayBuilder().setContent(
+        const endHeader = new TextDisplayBuilder().setContent(`### ${client.emoji.gwy} Giveaway Ended`);
+        const endSep    = new SeparatorBuilder();
+        const endInfo   = new TextDisplayBuilder().setContent(
             `${client.emoji.wickarrow} **Prize:** \`${giveaway.prize}\`\n` +
             `${client.emoji.wickarrow} **Host:** <@${giveaway.hostId}>\n` +
             `${client.emoji.wickarrow} **Participants:** ${giveaway.participants.length}\n` +
@@ -67,6 +136,27 @@ async function rerollGiveaway(client, giveaway, channel) {
     if (!giveaway.ended)                   return "The giveaway hasn't ended yet!";
     if (giveaway.participants.length === 0) return "No one entered the giveaway!";
 
+    const guild = client.guilds.cache.get(giveaway.guildId);
+
+    // Invite-winner reroll: re-check invite counts
+    if (giveaway.inviteWinner && guild) {
+        const validParticipants = giveaway.participants.filter(id => id !== giveaway.hostId);
+        const participantsToUse = validParticipants.length > 0 ? validParticipants : giveaway.participants;
+
+        const inviteCounts = await Promise.all(
+            participantsToUse.map(async id => ({
+                id,
+                count: await getUserInviteCount(guild, id),
+            }))
+        );
+        inviteCounts.sort((a, b) => b.count - a.count);
+        const winner = inviteCounts[0]?.id;
+        if (!winner) return "Could not determine a winner.";
+        channel.send({ content: `${client.emoji.gwy} Rerolled! <@${winner}> wins **\`${giveaway.prize}\`** with the most invites!` });
+        return true;
+    }
+
+    // Normal random reroll
     const validParticipants = giveaway.participants.filter(id => id !== giveaway.hostId);
     const participantsToUse = validParticipants.length > 0 ? validParticipants : giveaway.participants;
     const winner            = participantsToUse[Math.floor(Math.random() * participantsToUse.length)];
@@ -94,6 +184,11 @@ async function recoverGiveaway(client, message) {
         const hostId      = hostMatch[1];
         const endTime     = parseInt(timeMatch[1]) * 1000;
 
+        // Detect invite winner mode from message text
+        const inviteWinner = rawData.includes('Most Invites Wins');
+        const minInvMatch  = rawData.match(/Min Invites Required.*?`(\d+)`/);
+        const minInvites   = minInvMatch ? parseInt(minInvMatch[1]) : 0;
+
         const emojiId = client.emoji.gwy.match(/:(\d+)>/)?.[1];
         if (!emojiId) return null;
 
@@ -109,6 +204,7 @@ async function recoverGiveaway(client, message) {
         const giveawayData = {
             guildId: message.guildId, channelId: message.channelId, messageId: message.id,
             hostId, prize, winnerCount, endTime, participants, ended: false,
+            minInvites, inviteWinner,
         };
 
         client.db.giveaways.set(message.id, giveawayData);
@@ -157,10 +253,9 @@ async function syncGiveaways(client, guild) {
 //       cleanup old ended giveaways every hour
 // ─────────────────────────────────────────────────────────────────────────────
 function init(client) {
-    // Check for expired giveaways every 10 seconds
     setInterval(async () => {
         try {
-            const now            = Date.now();
+            const now             = Date.now();
             const activeGiveaways = client.db.giveaways.getExpired(now);
             for (const giveaway of activeGiveaways) {
                 await endGiveaway(client, giveaway);
@@ -170,7 +265,6 @@ function init(client) {
         }
     }, 10000);
 
-    // Clean up giveaways older than 24h every hour
     setInterval(async () => {
         try {
             const oneDayAgo = Date.now() - 86400000;
@@ -182,4 +276,4 @@ function init(client) {
     }, 3600000);
 }
 
-module.exports = { init, endGiveaway, rerollGiveaway, recoverGiveaway, syncGiveaways };
+module.exports = { init, endGiveaway, rerollGiveaway, recoverGiveaway, syncGiveaways, getUserInviteCount };

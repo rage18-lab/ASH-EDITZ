@@ -402,11 +402,23 @@ function _buildManagers() {
         get: (messageId) => {
             const row = sqlGet('SELECT * FROM giveaways WHERE messageId = ?', [messageId]);
             if (!row) return null;
-            return { ...row, participants: deserialize(row.participants), ended: !!row.ended };
+            return {
+                ...row,
+                participants: deserialize(row.participants),
+                ended:        !!row.ended,
+                inviteWinner: !!row.inviteWinner,
+                minInvites:   row.minInvites ?? 0,
+            };
         },
 
         set: (messageId, data) => {
-            const payload = { ...data, participants: JSON.stringify(data.participants || []), ended: data.ended ? 1 : 0 };
+            const payload = {
+                ...data,
+                participants: JSON.stringify(data.participants || []),
+                ended:        data.ended        ? 1 : 0,
+                inviteWinner: data.inviteWinner  ? 1 : 0,
+                minInvites:   data.minInvites    ?? 0,
+            };
             const exists  = sqlGet('SELECT 1 FROM giveaways WHERE messageId = ?', [messageId]);
             if (exists) {
                 const updates = [];
@@ -427,11 +439,11 @@ function _buildManagers() {
 
         getActiveForChannel: (channelId) =>
             sqlAll('SELECT * FROM giveaways WHERE channelId = ? AND ended = 0', [channelId])
-                .map(r => ({ ...r, participants: deserialize(r.participants), ended: false })),
+                .map(r => ({ ...r, participants: deserialize(r.participants), ended: false, inviteWinner: !!r.inviteWinner, minInvites: r.minInvites ?? 0 })),
 
         getEndedForChannel: (channelId) =>
             sqlAll('SELECT * FROM giveaways WHERE channelId = ? AND ended = 1', [channelId])
-                .map(r => ({ ...r, participants: deserialize(r.participants), ended: true })),
+                .map(r => ({ ...r, participants: deserialize(r.participants), ended: true, inviteWinner: !!r.inviteWinner, minInvites: r.minInvites ?? 0 })),
 
         getExpired: (now) =>
             sqlAll('SELECT * FROM giveaways WHERE ended = 0 AND endTime <= ?', [now])
@@ -517,15 +529,17 @@ async function initDatabase() {
         {
             name: 'giveaways',
             schema: `
-                messageId   TEXT PRIMARY KEY,
-                guildId     TEXT,
-                channelId   TEXT,
-                hostId      TEXT,
-                prize       TEXT,
-                winnerCount INTEGER DEFAULT 1,
-                endTime     INTEGER,
+                messageId    TEXT PRIMARY KEY,
+                guildId      TEXT,
+                channelId    TEXT,
+                hostId       TEXT,
+                prize        TEXT,
+                winnerCount  INTEGER DEFAULT 1,
+                endTime      INTEGER,
                 participants TEXT DEFAULT '[]',
-                ended        INTEGER DEFAULT 0
+                ended        INTEGER DEFAULT 0,
+                minInvites   INTEGER DEFAULT 0,
+                inviteWinner INTEGER DEFAULT 0
             `
         }
     ];
@@ -550,6 +564,17 @@ async function initDatabase() {
             const colNames = cols.map(c => c.name);
             if (!colNames.includes('guildId')) {
                 db.run('ALTER TABLE reboot ADD COLUMN guildId TEXT');
+            }
+        }
+
+        if (table.name === 'giveaways') {
+            const cols     = sqlAll('PRAGMA table_info(giveaways)');
+            const colNames = cols.map(c => c.name);
+            if (!colNames.includes('minInvites')) {
+                db.run('ALTER TABLE giveaways ADD COLUMN minInvites INTEGER DEFAULT 0');
+            }
+            if (!colNames.includes('inviteWinner')) {
+                db.run('ALTER TABLE giveaways ADD COLUMN inviteWinner INTEGER DEFAULT 0');
             }
         }
     });
