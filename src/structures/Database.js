@@ -396,6 +396,37 @@ function _buildManagers() {
         deleteMany: (customSql = 'DELETE FROM rankPermissions', params = []) =>
             sqlRun(customSql, params)
     };
+
+    // ── giveaways ─────────────────────────────────────────────────────────────
+    managers.giveaways = {
+        get: (messageId) => sqlGet('SELECT * FROM giveaways WHERE messageId = ?', [messageId]),
+
+        create: (data) => {
+            const keys = Object.keys(data);
+            const vals = keys.map(k => data[k]);
+            sqlRun(
+                `INSERT OR IGNORE INTO giveaways (${keys.join(', ')}) VALUES (${keys.map(() => '?').join(', ')})`,
+                vals
+            );
+        },
+
+        update: (messageId, data) => {
+            const updates = [];
+            const params  = [];
+            for (const key in data) {
+                updates.push(`${key} = ?`);
+                params.push(data[key]);
+            }
+            params.push(messageId);
+            sqlRun(`UPDATE giveaways SET ${updates.join(', ')} WHERE messageId = ?`, params);
+        },
+
+        delete: (messageId) => sqlRun('DELETE FROM giveaways WHERE messageId = ?', [messageId]),
+
+        getByGuild: (guildId) => sqlAll('SELECT * FROM giveaways WHERE guildId = ?', [guildId]),
+
+        getActive: () => sqlAll('SELECT * FROM giveaways WHERE ended = 0'),
+    };
 }
 
 // ── Async init ────────────────────────────────────────────────────────────────
@@ -467,6 +498,21 @@ async function initDatabase() {
         {
             name: 'music_stats',
             schema: `userId TEXT PRIMARY KEY, songsPlayed INTEGER DEFAULT 0, lastSong TEXT DEFAULT ''`
+        },
+        {
+            name: 'giveaways',
+            schema: `
+                messageId TEXT PRIMARY KEY,
+                guildId TEXT,
+                channelId TEXT,
+                prize TEXT,
+                endsAt INTEGER,
+                winners_count INTEGER DEFAULT 1,
+                hostedBy TEXT,
+                entrants TEXT DEFAULT '[]',
+                winners TEXT DEFAULT '[]',
+                ended INTEGER DEFAULT 0
+            `
         }
     ];
 
