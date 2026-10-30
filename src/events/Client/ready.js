@@ -82,6 +82,10 @@ module.exports = {
       console.log("\n⚠️ WARNING: No slash commands to deploy! client.slashCommands.size = 0\n");
     }
 
+    // ── Start giveaway auto-end polling ──────────────────────────────────────
+    const giveawayManager = require("../../utils/giveawayManager");
+    giveawayManager.init(client);
+    client.logger.log("[Giveaway] Manager initialised (10s polling active)", "ready");
 
   },
 };

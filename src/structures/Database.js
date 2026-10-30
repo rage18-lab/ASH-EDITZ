@@ -396,6 +396,52 @@ function _buildManagers() {
         deleteMany: (customSql = 'DELETE FROM rankPermissions', params = []) =>
             sqlRun(customSql, params)
     };
+
+    // ── giveaways ─────────────────────────────────────────────────────────────
+    managers.giveaways = {
+        get: (messageId) => {
+            const row = sqlGet('SELECT * FROM giveaways WHERE messageId = ?', [messageId]);
+            if (!row) return null;
+            return { ...row, participants: deserialize(row.participants), ended: !!row.ended };
+        },
+
+        set: (messageId, data) => {
+            const payload = { ...data, participants: JSON.stringify(data.participants || []), ended: data.ended ? 1 : 0 };
+            const exists  = sqlGet('SELECT 1 FROM giveaways WHERE messageId = ?', [messageId]);
+            if (exists) {
+                const updates = [];
+                const params  = [];
+                for (const key in payload) {
+                    if (key === 'messageId') continue;
+                    updates.push(`${key} = ?`);
+                    params.push(payload[key]);
+                }
+                params.push(messageId);
+                sqlRun(`UPDATE giveaways SET ${updates.join(', ')} WHERE messageId = ?`, params);
+            } else {
+                const keys = Object.keys(payload);
+                const vals = keys.map(k => payload[k]);
+                sqlRun(`INSERT INTO giveaways (${keys.join(', ')}) VALUES (${keys.map(() => '?').join(', ')})`, vals);
+            }
+        },
+
+        getActiveForChannel: (channelId) =>
+            sqlAll('SELECT * FROM giveaways WHERE channelId = ? AND ended = 0', [channelId])
+                .map(r => ({ ...r, participants: deserialize(r.participants), ended: false })),
+
+        getEndedForChannel: (channelId) =>
+            sqlAll('SELECT * FROM giveaways WHERE channelId = ? AND ended = 1', [channelId])
+                .map(r => ({ ...r, participants: deserialize(r.participants), ended: true })),
+
+        getExpired: (now) =>
+            sqlAll('SELECT * FROM giveaways WHERE ended = 0 AND endTime <= ?', [now])
+                .map(r => ({ ...r, participants: deserialize(r.participants), ended: false })),
+
+        deleteOldEnded: (olderThan) => {
+            sqlRun('DELETE FROM giveaways WHERE ended = 1 AND endTime < ?', [olderThan]);
+            return db.getRowsModified();
+        },
+    };
 }
 
 // ── Async init ────────────────────────────────────────────────────────────────
@@ -467,6 +513,20 @@ async function initDatabase() {
         {
             name: 'music_stats',
             schema: `userId TEXT PRIMARY KEY, songsPlayed INTEGER DEFAULT 0, lastSong TEXT DEFAULT ''`
+        },
+        {
+            name: 'giveaways',
+            schema: `
+                messageId   TEXT PRIMARY KEY,
+                guildId     TEXT,
+                channelId   TEXT,
+                hostId      TEXT,
+                prize       TEXT,
+                winnerCount INTEGER DEFAULT 1,
+                endTime     INTEGER,
+                participants TEXT DEFAULT '[]',
+                ended        INTEGER DEFAULT 0
+            `
         }
     ];
 
